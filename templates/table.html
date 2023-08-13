@@ -37,40 +37,31 @@
     </script>
 </head>
 <body>
-    {% for group in data %}
-        <h2 style="color: darkred;">Order Key: {{ group.order_key }}</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th class="prod-name">Product Name</th>
-                    <th class="other">Quantity</th>
-                    <th class="other">Total Price</th>
-                    <th class="other">Tax ID</th>
-                    <th class="other">Order Status</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for order in group.orders %}
-                {% for item in order.line_items %}
-                    <tr>
-                        <td class="prod-name">{{ item.name }}</td>
-                        <td class="other">{{ item.quantity }}</td>
-                        <td class="other">{{ item.total }}</td>
-                        <td class="other">{{ item.taxes[0].id if item.taxes else 'N/A' }}</td>
-                        <td class="other">{{ order.status }}</td>
-                    </tr>
-                {% endfor %}
-                {% if order.status == "on-hold" %}
-                    <tr>
-                        <td colspan="5" style="text-align: center;">
-                            <button onclick="acceptOrder({{ order.id }})">Accept</button>
-                            <button onclick="rejectOrder({{ order.id }})">Reject</button>
-                        </td>
-                    </tr>
-                {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
+{% if order %}
+    <h3 style="color: darkred;">Order Key: {{ order.order_key }}</h3>
+    <h4 style="color: darkblue;">Order ID: {{ order.id }} - Status: {{ order.status }}</h4>
+    <table>
+    <tr>
+        <th>Product Name</th>
+        <th>Quantity</th>
+        <th>Total Price</th>
+        <th>Tax ID</th>
+    </tr>
+    {% for item in order.line_items %}
+        <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.total }}</td>
+            <td>{{ item.taxes[0].id if item.taxes else 'N/A' }}</td>
+        </tr>
     {% endfor %}
+    <p style="font-size: small; color: gray;">Debug info: {{ order | tojson }}</p>
+</table>
+<button onclick="acceptOrder({{ order.id }})">Accept</button>
+<button onclick="rejectOrder({{ order.id }})">Reject</button>
+{% else %}
+    <h3>No more orders</h3>
+{% endif %}
+
 </body>
 </html>
