@@ -2,37 +2,75 @@
 <html>
 <head>
     <title>WooCommerce Orders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
+        tr:nth-child(even){background-color: #f2f2f2}
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function acceptOrder(orderId) {
+            $.post("/accept_order/" + orderId, function(data, status){
+                alert("Order Accepted: Status - " + status);
+                location.reload();
+            });
+        }
+        function rejectOrder(orderId) {
+            $.post("/reject_order/" + orderId, function(data, status){
+                alert("Order Rejected: Status - " + status);
+                location.reload();
+            });
+        }
+    </script>
 </head>
 <body>
-    <table>
-        <tr>
-            <th>Total</th>
-            <th>Order Key</th>
-            <th>Phone</th>
-            <th>Czas Odbioru</th>
-            <th>Godzina Odbioru</th>
-            <th>Info Godziny</th>
-            <th>Item Name</th>
-            <th>Quantity</th>
-            <th>Item Total</th>
-            <th>Tax ID</th>
-        </tr>
-        {% for order in data %}
-            {% for item in order.line_items %}
+    {% for group in data %}
+        <h2 style="color: darkred;">Order Key: {{ group.order_key }}</h2>
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ order.total }}</td>
-                    <td>{{ order.order_key }}</td>
-                    <td>{{ order.billing.phone }}</td>
-                    <td>{{ order.billing.czas_odbioru }}</td>
-                    <td>{{ order.billing.godzina_odbioru }}</td>
-                    <td>{{ order.billing.info_godziny }}</td>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ item.total }}</td>
-                    <td>{{ item.taxes[0].id if item.taxes else 'N/A' }}</td>
+                    <th class="prod-name">Product Name</th>
+                    <th class="other">Quantity</th>
+                    <th class="other">Total Price</th>
+                    <th class="other">Tax ID</th>
+                    <th class="other">Order Status</th>
                 </tr>
+            </thead>
+            <tbody>
+            {% for order in group.orders %}
+                {% for item in order.line_items %}
+                    <tr>
+                        <td class="prod-name">{{ item.name }}</td>
+                        <td class="other">{{ item.quantity }}</td>
+                        <td class="other">{{ item.total }}</td>
+                        <td class="other">{{ item.taxes[0].id if item.taxes else 'N/A' }}</td>
+                        <td class="other">{{ order.status }}</td>
+                    </tr>
+                {% endfor %}
+                {% if order.status == "on-hold" %}
+                    <tr>
+                        <td colspan="5" style="text-align: center;">
+                            <button onclick="acceptOrder({{ order.id }})">Accept</button>
+                            <button onclick="rejectOrder({{ order.id }})">Reject</button>
+                        </td>
+                    </tr>
+                {% endif %}
             {% endfor %}
-        {% endfor %}
-    </table>
+            </tbody>
+        </table>
+    {% endfor %}
 </body>
 </html>
