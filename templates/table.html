@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WooCommerce Orders</title>
+</head>
+<body>
+    <table>
+        <tr>
+            <th>Total</th>
+            <th>Order Key</th>
+            <th>Phone</th>
+            <th>Czas Odbioru</th>
+            <th>Godzina Odbioru</th>
+            <th>Info Godziny</th>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Item Total</th>
+            <th>Tax ID</th>
+        </tr>
+        {% for order in data %}
+            {% for item in order.line_items %}
+                <tr>
+                    <td>{{ order.total }}</td>
+                    <td>{{ order.order_key }}</td>
+                    <td>{{ order.billing.phone }}</td>
+                    <td>{{ order.billing.czas_odbioru }}</td>
+                    <td>{{ order.billing.godzina_odbioru }}</td>
+                    <td>{{ order.billing.info_godziny }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.total }}</td>
+                    <td>{{ item.taxes[0].id if item.taxes else 'N/A' }}</td>
+                </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+</body>
+</html>
