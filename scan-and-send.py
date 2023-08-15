@@ -1,15 +1,16 @@
 import serial
 import time
 import re
+import argparse
 
 class RB900ModemAdapter:
-    def __init__(self, port='COM12', baudrate = 9600, timeout = 5):
+    def __init__(self, port, baudrate = 9600, timeout = 5):
         while True:
             try:
                 self.ser = serial.Serial(port, baudrate, timeout=timeout)
                 break
             except (serial.SerialException, FileNotFoundError):
-                print("Nie mo?na otworzy? portu '{0}'. Upewnij si?, ?e jest poprawny i nie jest ju? u?ywany".format(port))
+                print("Nie można otworzyć portu '{0}'. Upewnij się, że jest poprawny i nie jest już używany".format(port))
                 time.sleep(5)
 
     def send_sms(self, phone_number, message):
@@ -25,32 +26,30 @@ class RB900ModemAdapter:
             self.ser.write(bytes([26]))
             time.sleep(1)
         except Exception as e:
-            print("Nie uda?o si? wys?a? SMS-a: ", str(e))
+            print("Nie udało się wysłać SMS-a: ", str(e))
 
     def __del__(self):
         if self.ser is not None:
             try:
                 self.ser.close()
-                print("Zamkni?to po??czenie szeregowe.")
+                print("Zamknięto połączenie szeregowe.")
             except Exception as e:
-                print("Nie uda?o si? zamkn?? po??czenia szeregowego: ", str(e))
+                print("Nie udało się zamknąć połączenia szeregowego: ", str(e))
 
-def main():
+def main(scanner_port, sms_port):
     while True:
         try:
-            # Specify your COM Port and Baud Rate accordingly here.
-            ser = serial.Serial('COM10', baudrate=9600, parity='N', stopbits=1, bytesize=8, timeout=1)
+            ser = serial.Serial(scanner_port, baudrate=9600, parity='N', stopbits=1, bytesize=8, timeout=1)
         except (serial.SerialException, FileNotFoundError):
-            print("Nie mo?na otworzy? portu 'COM10'. Upewnij si?, ?e jest poprawny i nie jest ju? u?ywany")
+            print(f"Nie można otworzyć portu {scanner_port}. Upewnij się, że jest poprawny i nie jest już używany")
             time.sleep(5)
         else:
             break
 
-    modem = RB900ModemAdapter()
+    modem = RB900ModemAdapter(port=sms_port)
 
-    # Make sure serial connection is open
     if ser.isOpen():
-        print("Po??czenie szeregowe jest otwarte. Gotowe do odczytu.")
+        print("Połączenie szeregowe jest otwarte. Gotowe do odczytu.")
         while True:
             try:
                 print("Skanowanie...")
@@ -58,17 +57,21 @@ def main():
                 if len(barcode_data) > 0:
                     if re.match(r'\d{9}', barcode_data):
                         phone_number = '+48' + barcode_data
-                        message = "Danie gotowe :)"
+                        message = "Danie gotowe do odbioru, zapraszamy :)"
                         modem.send_sms(phone_number, message)
-                        print("Wiadomo?? wys?ana pomy?lnie!")
+                        print("Wiadomość wysłana pomyślnie!")
                     else:
-                        print("Nieprawid?owy numer telefonu. Powinien sk?ada? si? z 9 cyfr.")
+                        print("Nieprawidłowy numer telefonu. Powinien składać się z 9 cyfr.")
             except KeyboardInterrupt:
                 ser.close()
-                print("Po??czenie szeregowe zamkni?te")
+                print("Połączenie szeregowe zamknięte")
                 break
     else:
-        print("Nie mo?na otworzy? po??czenia szeregowego.")
+        print("Nie można otworzyć połączenia szeregowego.")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Scanner and SMS sender application.')
+    parser.add_argument('scanner_port', type=str, help='The scanner serial port')
+    parser.add_argument('sms_port', type=str, help='The SMS sending serial port')
+    args = parser.parse_args()
+    main(args.scanner_port, args.sms_port)
