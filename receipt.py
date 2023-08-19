@@ -77,15 +77,6 @@ class Printer:
                 raise Exception('Cannot end printer communication')
 
     def print_internal_order(self, order):
-        W = ctypes.c_int()
-        OpisBledu = ctypes.create_string_buffer(255)
-
-        if self.elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
-            raise Exception('Cannot init printer')
-
-
-
-    def print_internal_order(self, order):
         try:
             W = ctypes.c_int()
             OpisBledu = ctypes.create_string_buffer(255)
@@ -118,10 +109,3 @@ class Printer:
         finally:
           self.elzabdr.CommunicationEnd()
 
-if __name__ == "__main__":
-    printer = Printer(elzabdr, 1, 9600, 5)
-    order = Order()
-    order.add_item(ReceiptItem('TowarTestowy_A', 200, 1, 150, 'szt.'))
-    order.add_item(ReceiptItem('TowarTestowy_B', 100, 1, 250, 'szt.'))
-    printer.print_receipt(order)
-    printer.print_internal_order(order)
