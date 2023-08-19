@@ -2,8 +2,9 @@ import base64
 import requests
 import time
 import tkinter as tk
+from tkinter import ttk
 from operator import itemgetter
-from tkinter import messagebox
+
 client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
 client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
 
@@ -32,21 +33,57 @@ def change_order_status(order_id, status):
     response = requests.put(order_update_url, headers=headers, json=data)
     response.raise_for_status()
 
-def main_loop():
-    root = tk.Tk()
+root = tk.Tk()
 
-    while True:
-        order = get_order()
-        if order:
-            action = tk.messagebox.askquestion('New Order', f'New order ({order["order_key"]}) available, accept or reject?')
-            if action == 'yes':
-                accept_order(order['id'])
-            else:
-                reject_order(order['id'])
-        #give server some time before hitting it with requests again
-        time.sleep(5)
-    #start gui event loop 
-    root.mainloop()
+label_order = tk.Label(root, text="")
+label_order.pack()
+
+label_nip = tk.Label(root, text="")
+label_nip.pack()
+
+label_phone = tk.Label(root, text="")
+label_phone.pack()
+
+label_na_miejscu_na_wynos = tk.Label(root, text="")
+label_na_miejscu_na_wynos.pack()
+
+label_comments = tk.Label(root, text="")
+label_comments.pack()
+
+treeview = ttk.Treeview(root)
+treeview.pack()
+treeview["columns"]=("1","2","3")
+treeview['show'] = 'headings'
+treeview.column("1", width=150 )
+treeview.column("2", width=100)
+treeview.column("3", width=150)
+treeview.heading("1", text="Item")
+treeview.heading("2", text="Quantity")
+treeview.heading("3", text="Price Including Tax")
+
+button_accept = tk.Button(root, text="Accept Order", command=lambda: accept_order(order_id))
+button_accept.pack()
+
+button_reject = tk.Button(root, text="Reject Order", command=lambda: reject_order(order_id))
+button_reject.pack()
+
+def update_order():
+    global order_id
+    order = get_order()
+    if order:
+        order_id = order['id']
+        label_order.config(text = f"Order: {order_id}")
+        label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
+        label_phone.config(text = f"Phone: {order['billing']['phone']}")
+        label_na_miejscu_na_wynos.config(text = f"Na Miejscu Na Wynos: {order['billing']['na_miejscu_na_wynos']}")
+        label_comments.config(text = f"Comments: {order['customer_note']}")
+        treeview.delete(*treeview.get_children())
+        for item in order['line_items']:
+            total_price = float(item['total']) + float(item['total_tax'])
+            treeview.insert("", 'end', values=(item['name'], item['quantity'], total_price))
+    root.after(5000, update_order)
+
 
 if __name__ == "__main__":
-    main_loop()
+    root.after(5000, update_order)
+    root.mainloop()
