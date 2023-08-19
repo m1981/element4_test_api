@@ -7,6 +7,8 @@ from operator import itemgetter
 import threading
 import winsound
 from receipt import Order, ReceiptItem, Printer, elzabdr
+# setup printer
+printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
 
 client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
 client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
@@ -44,9 +46,20 @@ def get_order():
 
     return sorted_orders[0] if sorted_orders else None
 
+def get_order_by_id(order_id):
+    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
+    response = requests.get(
+        f"https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/{order_id}",
+        headers={"Authorization": f"Basic {base64_encoded_data}"}
+    )
+    order = response.json()
+    return order
+
 def accept_order(order_id):
+    order = get_order_by_id(order_id)
+    print_receipt_for_order(order)
     # change_order_status(order_id, 'completed')
-    pass
+
 
 def reject_order(order_id):
     change_order_status(order_id, 'cancelled')
@@ -59,6 +72,10 @@ def change_order_status(order_id, status):
     response = requests.put(order_update_url, headers=headers, json=data)
     response.raise_for_status()
 
+def handle_accept_order(order_id):
+    order = get_order()  # Retrieve the order
+    print_receipt_for_order(order)  # Print the receipt
+    accept_order(order_id)  # Accept the order (change order status)
 
 label_order = tk.Label(root, text="")
 label_order.pack()
@@ -89,22 +106,31 @@ treeview.heading("1", text="Item")
 treeview.heading("2", text="Quantity")
 treeview.heading("3", text="Price Including Tax")
 
+
 button_accept = tk.Button(root, text="Accept Order", command=lambda: handle_accept_order(order_id))
 button_accept.pack()
 
 button_reject = tk.Button(root, text="Reject Order", command=lambda: reject_order(order_id))
 button_reject.pack()
 
-def handle_accept_order(order_id):
-    order = get_order()  # Retrieve the order
+def print_receipt_for_order(order):
+    # Convert order data. Note that you will need to map fields from the order
+    # to the ReceiptItem accordingly
+    receipt_order = Order()
+    receipt_order.NIP = order['billing']['nip_do_paragonu']
+    receipt_order.order_id = order['id']
+    receipt_order.phone_number = order['billing']['phone']
+    receipt_order.na_miejscu_na_wynos = order['billing']['na_miejscu_na_wynos']
+    receipt_order.comments = order['dodatki_do_pizzy']['notatki']
+    for item in order['line_items']:
+        total_price = float(item['total']) + float(item['total_tax'])
+        receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, 1, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
+        # name, amount, vat_rate, price, measurement_unit
+        #elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('utf-8'),item.price)
 
-    try:
-        printer = Printer(elzabdr, 1, 9600, 5)  # Initialize the Printer
-        printer.print_receipt(order)  # Print the receipt
-    except Exception as e:
-        print(f"Failed to print receipt: {e}")
+    # print receipt
+    printer.print_receipt(receipt_order)
 
-    accept_order(order_id)  # Accept the order (change order status)
 
 def update_order():
     global order_id

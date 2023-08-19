@@ -1,10 +1,4 @@
 import ctypes
-from base64 import b64encode
-import requests
-import winsound
-import threading
-from operator import itemgetter
-
 
 elzabdr = ctypes.CDLL('./elzabdr.dll')
 
@@ -41,22 +35,26 @@ elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
 
 class ReceiptItem:
-    def __init__(self, item):
-        self.name = item['name']  # set product name
-        self.amount = item['quantity']  # set quantity
-        self.vat_rate = 'vat_rate'  # take from the `line_items` if provided
-        self.price = float(item['total']) + float(item['total_tax'])  # Total Price including Tax
-        self.measurement_unit = 'szt.'  # not directly available, set a default or based on business rules
+    def __init__(self, name, amount, vat_rate, price, measurement_unit):
+        self.name = name
+        self.amount = amount
+        self.vat_rate = vat_rate
+        self.price = price
+        self.measurement_unit = measurement_unit
+
 
 class Order:
-    def __init__(self, json_order):
-        self.items = [ReceiptItem(item) for item in json_order['line_items']]
+    def __init__(self):
+        self.items = []
         self.czy_chce_nip = True
-        self.NIP = json_order.get('billing', {}).get('nip_do_paragonu', "default_value")  # <- Default value set here if not found
-        self.order_id = json_order.get('id', "default_value")
-        self.phone_number = json_order.get('billing', {}).get('phone', "default_value")
-        self.na_miejscu_na_wynos = json_order.get('billing', {}).get('na_miejscu_na_wynos', "default_value")
-        self.comments = json_order.get('dodatki_do_pizzy', {}).get('notatki', "default_value")
+        self.NIP = '9671083546'
+        self.order_id = 123
+        self.phone_number = '791630003'
+        self.na_miejscu_na_wynos = 'Na wynos'
+        self.comments = 'test'  # "notatki"
+
+    def add_item(self, item):
+        self.items.append(item)
 
 
 class Printer:
