@@ -44,9 +44,8 @@ class ReceiptItem:
 
 
 class Order:
-    def __init__(self, shop_name, NIP):
+    def __init__(self):
         self.items = []
-        self.shop_name = shop_name
         self.czy_chce_nip = True
         self.NIP = '9671083546'
         self.order_id = 123
@@ -127,7 +126,7 @@ class Printer:
 
 if __name__ == "__main__":
     printer = Printer(elzabdr, 1, 9600, 5)
-    order = Order('Sklep internetowy', '1234567890')
+    order = Order()
     order.add_item(ReceiptItem('TowarTestowy_A', 200, 1, 150, 'szt.'))
     order.add_item(ReceiptItem('TowarTestowy_B', 100, 1, 250, 'szt.'))
     printer.print_receipt(order)
