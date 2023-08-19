@@ -35,12 +35,11 @@ elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
 
 class ReceiptItem:
-    def __init__(self, name, amount, vat_rate, price, item_type, measurement_unit):
+    def __init__(self, name, amount, vat_rate, price, measurement_unit):
         self.name = name
         self.amount = amount
         self.vat_rate = vat_rate
         self.price = price
-        self.item_type = item_type
         self.measurement_unit = measurement_unit
 
 
@@ -64,31 +63,17 @@ class Printer:
     def print_receipt(self, order):
         W = ctypes.c_int()
         OpisBledu = ctypes.create_string_buffer(255)
-        print('receipt')
-        if self.elzabdr.CommunicationInit(2, 9600, 5) != 0:
+        if self.elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
             raise Exception('Cannot init printer')
         print(self.port)
         try:
             self.elzabdr.pFillLines(2, "Sklep internetowy".encode('utf-8'), ctypes.byref(W))
 
             elzabdr.pReceiptPurchaserNIP(order.NIP.encode('utf-8'))
-            print("asdas")
             elzabdr.ReceiptBegin()
-            print("Begin")
 
             for item in order.items:
-                 if (str6 == "23")
-                                pReceiptItemEx(1, Nazwa, 1, 0, 100, 2, "szt.", Cena);
-                            if (str6 == "5")
-                                pReceiptItemEx(1, Nazwa, 3, 0, 100, 2, "szt.", Cena);
-                            if (str6 == "8")
-                                pReceiptItemEx(1, Nazwa, 2, 0, 100, 2, "szt.", Cena);
-w = elzabdr.pReceiptItemEx(1, b"TowarTestowy_A", 1, 0, 100, 2, b"szt.", 150)
-                elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.amount, 0, item.price, item.vat_rate, item.measurement_unit.encode('utf-8'))
-                if W.value != 0:
-                    elzabdr.pErrMessage(W.value, OpisBledu)
-                    print('Error:', OpisBledu.value)
-                    return
+                elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('utf-8'),item.price)
             elzabdr.ReceiptEnd(0)
         finally:
             if self.elzabdr.CommunicationEnd() != 0:
@@ -103,9 +88,9 @@ w = elzabdr.pReceiptItemEx(1, b"TowarTestowy_A", 1, 0, 100, 2, b"szt.", 150)
 
 
 if __name__ == "__main__":
-    printer = Printer(elzabdr, 2, 9600, 5)
+    printer = Printer(elzabdr, 1, 9600, 5)
     order = Order('Sklep internetowy', '1234567890')
-    order.add_item(ReceiptItem('TowarTestowy_A', 1, 0, 100, 2, 'szt.'))
-    order.add_item(ReceiptItem('TowarTestowy_B', 1, 0, 100, 2, 'szt.'))
+    order.add_item(ReceiptItem('TowarTestowy_A', 200, 1, 150, 'szt.'))
+    order.add_item(ReceiptItem('TowarTestowy_B', 100, 1, 250, 'szt.'))
     printer.print_receipt(order)
     #printer.print_internal_order(order)
