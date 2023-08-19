@@ -41,17 +41,15 @@ def main():
 
     wynik = elzabdr.CommunicationInit(Port, Szybkosc, Timeout)
     if wynik == 0:
-        wynik = elzabdr.pFillLines(2, "gotówka".encode('utf-8'), ctypes.byref(W))
+        wynik = elzabdr.pFillLines(2, "Sklep internetowy".encode('utf-8'), ctypes.byref(W))
         if wynik == 0:
-            wynik = elzabdr.pFillPayment(1, "gotówka".encode('utf-8'), 150000, 1763)
-            if wynik == 0:
                 wynik = elzabdr.ReceiptBegin()
                 if wynik == 0:
                     wynik = elzabdr.pReceiptItemEx(1, b"TowarTestowy_A", 1, 0, 100, 2, b"szt.", 150)
                     if wynik == 0:
                         wynik = elzabdr.pReceiptItemEx(1, b"TowarTestowy_B", 1, 0, 100, 2, b"szt.", 250)
                         if wynik == 0:
-                            wynik = elzabdr.ReceiptEnd(5)
+                            wynik = elzabdr.ReceiptEnd(0)
                             if wynik == 0:
                                 wynik = elzabdr.CommunicationEnd()
                                 if wynik == 0:
