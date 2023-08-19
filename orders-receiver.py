@@ -72,11 +72,11 @@ def update_order():
     order = get_order()
     if order:
         order_id = order['id']
-        label_order.config(text = f"Order: {order_id}")
+        label_order.config(text = f"Zamowienie: {order_id}")
         label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
-        label_phone.config(text = f"Phone: {order['billing']['phone']}")
-        label_na_miejscu_na_wynos.config(text = f"Na Miejscu Na Wynos: {order['billing']['na_miejscu_na_wynos']}")
-        label_comments.config(text = f"Comments: {order['customer_note']}")
+        label_phone.config(text = f"Telefon: {order['billing']['phone']}")
+        label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
+        label_comments.config(text = f"Komentarz: {order['dodatki_do_pizzy']['notatki']}")
         treeview.delete(*treeview.get_children())
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
