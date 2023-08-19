@@ -74,6 +74,7 @@ def update_order():
     global order_id
     order = get_order()
     if order:
+        root.attributes('-topmost', True)
         label_no_orders.config(text = "")  # Clearing "No orders" text
         order_id = order['id']
         label_order.config(text = f"Zamowienie: {order_id}")
@@ -86,6 +87,7 @@ def update_order():
             total_price = float(item['total']) + float(item['total_tax'])
             treeview.insert("", 'end', values=(item['name'], item['quantity'], total_price))
     else:
+        root.attributes('-topmost', False)
         label_order.config(text = "")
         label_nip.config(text = "")
         label_phone.config(text = "")
