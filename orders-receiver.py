@@ -6,6 +6,7 @@ from tkinter import ttk
 from operator import itemgetter
 import threading
 import winsound
+from receipt import Order, ReceiptItem, Printer, elzabdr
 
 client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
 client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
@@ -44,7 +45,8 @@ def get_order():
     return sorted_orders[0] if sorted_orders else None
 
 def accept_order(order_id):
-    change_order_status(order_id, 'completed')
+    # change_order_status(order_id, 'completed')
+    pass
 
 def reject_order(order_id):
     change_order_status(order_id, 'cancelled')
@@ -87,11 +89,22 @@ treeview.heading("1", text="Item")
 treeview.heading("2", text="Quantity")
 treeview.heading("3", text="Price Including Tax")
 
-button_accept = tk.Button(root, text="Accept Order", command=lambda: accept_order(order_id))
+button_accept = tk.Button(root, text="Accept Order", command=lambda: handle_accept_order(order_id))
 button_accept.pack()
 
 button_reject = tk.Button(root, text="Reject Order", command=lambda: reject_order(order_id))
 button_reject.pack()
+
+def handle_accept_order(order_id):
+    order = get_order()  # Retrieve the order
+
+    try:
+        printer = Printer(elzabdr, 1, 9600, 5)  # Initialize the Printer
+        printer.print_receipt(order)  # Print the receipt
+    except Exception as e:
+        print(f"Failed to print receipt: {e}")
+
+    accept_order(order_id)  # Accept the order (change order status)
 
 def update_order():
     global order_id
