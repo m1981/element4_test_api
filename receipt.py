@@ -93,7 +93,7 @@ class Printer:
 
             # todo Zapisz zamownienie do pliku
             # todo Zwieksz numer zamowienia
-            message = "Numer kolejny: {}".format(str(order.order_id))
+            message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
             self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('utf-8'), 1)
 
             self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('utf-8'), 1)
@@ -105,8 +105,6 @@ class Printer:
             #
             self.elzabdr.NonFiscalPrintoutEnd()
             wynik = self.elzabdr.CommunicationEnd()
-            if wynik == 0:
-                print("Program zakończony bezbłędnie")
         finally:
           self.elzabdr.CommunicationEnd()
 
