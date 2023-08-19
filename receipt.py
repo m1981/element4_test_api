@@ -58,24 +58,6 @@ class Printer:
         self.speed = speed
         self.timeout = timeout
 
-    def print_receipt(self, order):
-        W = ctypes.c_int()
-        OpisBledu = ctypes.create_string_buffer(255)
-        if self.elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
-            raise Exception('Cannot init printer')
-        try:
-            self.elzabdr.pFillLines(2, "Sklep internetowy".encode('utf-8'), ctypes.byref(W))
-
-            elzabdr.pReceiptPurchaserNIP(order.NIP.encode('utf-8'))
-            elzabdr.ReceiptBegin()
-
-            for item in order.items:
-                elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('utf-8'),item.price)
-            elzabdr.ReceiptEnd(0)
-        finally:
-            if self.elzabdr.CommunicationEnd() != 0:
-                raise Exception('Cannot end printer communication')
-
     def print_internal_order(self, order):
         try:
             W = ctypes.c_int()
@@ -90,8 +72,8 @@ class Printer:
                 self.elzabdr.pNonFiscalPrintoutLine(40, item.name.encode('utf-8'), 1)
                 self.elzabdr.pNonFiscalPrintoutLine(40, str(item.amount/100).encode('utf-8'), 1)
 
-            # Zapisz zamownienie do pliku
-            # Zwieksz numer zamowienia
+            # todo Zapisz zamownienie do pliku
+            # todo Zwieksz numer zamowienia
             message = "Numer kolejny: {}".format(str(order.order_id))
             self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('utf-8'), 1)
 
