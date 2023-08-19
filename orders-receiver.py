@@ -50,6 +50,9 @@ label_na_miejscu_na_wynos.pack()
 label_comments = tk.Label(root, text="")
 label_comments.pack()
 
+label_no_orders = tk.Label(root, text="", font = ("Helvetica", 18), fg = "red")
+label_no_orders.pack()
+
 treeview = ttk.Treeview(root)
 treeview.pack()
 treeview["columns"]=("1","2","3")
@@ -71,6 +74,7 @@ def update_order():
     global order_id
     order = get_order()
     if order:
+        label_no_orders.config(text = "")  # Clearing "No orders" text
         order_id = order['id']
         label_order.config(text = f"Zamowienie: {order_id}")
         label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
@@ -81,8 +85,15 @@ def update_order():
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
             treeview.insert("", 'end', values=(item['name'], item['quantity'], total_price))
+    else:
+        label_order.config(text = "")
+        label_nip.config(text = "")
+        label_phone.config(text = "")
+        label_na_miejscu_na_wynos.config(text = "")
+        label_comments.config(text = "")
+        treeview.delete(*treeview.get_children())
+        label_no_orders.config(text = "No orders currently")
     root.after(5000, update_order)
-
 
 if __name__ == "__main__":
     root.after(5000, update_order)
