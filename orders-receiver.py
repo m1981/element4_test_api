@@ -4,9 +4,23 @@ import time
 import tkinter as tk
 from tkinter import ttk
 from operator import itemgetter
+import threading
+import winsound
 
 client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
 client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
+
+def play_sound():
+    winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+
+def stop_sound():
+    winsound.PlaySound(None, winsound.SND_ASYNC)
+
+def onFocusIn(event):
+    stop_sound()
+
+root = tk.Tk()
+root.bind('<FocusIn>', onFocusIn)
 
 def get_order():
     base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
@@ -33,7 +47,6 @@ def change_order_status(order_id, status):
     response = requests.put(order_update_url, headers=headers, json=data)
     response.raise_for_status()
 
-root = tk.Tk()
 
 label_order = tk.Label(root, text="")
 label_order.pack()
@@ -74,6 +87,8 @@ def update_order():
     global order_id
     order = get_order()
     if order:
+        if root.state() == 'iconic':
+            threading.Thread(target=play_sound).start()
         root.attributes('-topmost', True)
         label_no_orders.config(text = "")  # Clearing "No orders" text
         order_id = order['id']
