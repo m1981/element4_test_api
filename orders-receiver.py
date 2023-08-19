@@ -70,7 +70,7 @@ def change_order_status(order_id, status):
 def handle_accept_order(order_id):
     order = get_order()  # Retrieve the order
     print_receipt_for_order(order)  # Print the receipt
-    #change_order_status(order_id, 'completed')
+    change_order_status(order_id, 'completed')
 
 
 label_order = tk.Label(root, text="")
@@ -113,6 +113,7 @@ def print_receipt_for_order(order):
     # Convert order data. Note that you will need to map fields from the order
     # to the ReceiptItem accordingly
     receipt_order = Order()
+    vat_id = 2
     receipt_order.NIP = order['billing']['nip_do_paragonu']
     receipt_order.order_id = order['id']
     receipt_order.phone_number = order['billing']['phone']
@@ -120,7 +121,7 @@ def print_receipt_for_order(order):
     receipt_order.comments = order['dodatki_do_pizzy']['notatki']
     for item in order['line_items']:
         total_price = float(item['total']) + float(item['total_tax'])
-        receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, 1, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
+        receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
 
     # print receipt
     printer.print_receipt(receipt_order)
