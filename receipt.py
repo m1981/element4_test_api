@@ -31,8 +31,8 @@ elzabdr.pErrMessage.argtypes = [ctypes.c_int, ctypes.c_char_p]
 elzabdr.pErrMessage.restype = ctypes.c_int
 
 
-# Application Logic
-def main():
+
+def print_receipt(elzabdr):
     W = ctypes.c_int()
     OpisBledu = ctypes.create_string_buffer(255)
     Port = 1
@@ -59,6 +59,30 @@ def main():
     elzabdr.pErrMessage(wynik, OpisBledu)
     print(OpisBledu.value)
 
+def print_internal_order(elzabdr):
+    W = ctypes.c_int()
+    OpisBledu = ctypes.create_string_buffer(255)
+    Port = 1
+    Szybkosc = 9600
+    Timeout = 5
 
+    wynik = elzabdr.CommunicationInit(Port, Szybkosc, Timeout)
+    if wynik != 0:
+        print("Blad inicjalizacji")
+        return 1
+    elzabdr.NonFiscalPrintoutBegin(53)
+    elzabdr.pNonFiscalPrintoutLine(10, b"", 0)
+    elzabdr.pNonFiscalPrintoutLine(20, b"Zamowienie", 1)
+
+    elzabdr.pNonFiscalPrintoutLine(40, b"TowarTestowy_A", 1)
+    elzabdr.pNonFiscalPrintoutLine(40, b"TowarTestowy_B", 1)
+
+    elzabdr.pNonFiscalPrintoutLine(1, b"Numer kolejny: 34", 1)
+    elzabdr.pNonFiscalPrintoutLine(11, b"Telefon 519 687 398", 1)
+    elzabdr.NonFiscalPrintoutEnd()
+    wynik = elzabdr.CommunicationEnd()
+    if wynik == 0:
+        print("Program zakończony bezbłędnie")
 if __name__ == "__main__":
-    main()
+    print_receipt(elzabdr)
+    print_internal_order(elzabdr)
