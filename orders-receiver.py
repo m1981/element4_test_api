@@ -10,6 +10,17 @@ from receipt import Order, ReceiptItem, Printer, elzabdr
 # setup printer
 printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
 
+import argparse
+
+# Initialize the parser
+parser = argparse.ArgumentParser(description="Process some integers.")
+
+# Add argument
+parser.add_argument("--status", type=str, required=True, help="Order status")
+
+# Parse arguments
+args = parser.parse_args()
+
 client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
 client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
 
@@ -29,13 +40,13 @@ order_exists = False  # variable to track state of orders
 
 def get_order():
     global order_exists
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
+    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
     response = requests.get(
         "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
         headers={"Authorization": f"Basic {base64_encoded_data}"}
     )
     data = response.json()
-    on_hold_orders = [order for order in data if order['status'] == "on-hold"]
+    on_hold_orders = [order for order in data if order['status'] == args.status]
     sorted_orders = sorted(on_hold_orders, key=itemgetter('date_created'))
     if sorted_orders and not order_exists:  # new order just arrived
         root.deiconify()
@@ -47,7 +58,7 @@ def get_order():
     return sorted_orders[0] if sorted_orders else None
 
 def get_order_by_id(order_id):
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
+    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
     response = requests.get(
         f"https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/{order_id}",
         headers={"Authorization": f"Basic {base64_encoded_data}"}
@@ -60,7 +71,7 @@ def reject_order(order_id):
     change_order_status(order_id, 'cancelled')
 
 def change_order_status(order_id, status):
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
+    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
     order_update_url = f"https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/{order_id}"
     headers = {"Authorization": f"Basic {base64_encoded_data}"}
     data = {"status": status}
@@ -123,9 +134,8 @@ def print_receipt_for_order(order):
         total_price = float(item['total']) + float(item['total_tax'])
         receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
 
-    # print receipt
     printer.print_receipt(receipt_order)
-
+    printer.print_internal_order(receipt_order)
 
 def update_order():
     global order_id
@@ -158,5 +168,7 @@ def update_order():
     root.after(5000, update_order)
 
 if __name__ == "__main__":
+
+
     root.after(5000, update_order)
     root.mainloop()

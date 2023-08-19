@@ -64,13 +64,13 @@ class Printer:
         if self.elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
             raise Exception('Cannot init printer')
         try:
-            self.elzabdr.pFillLines(2, "Sklep internetowy".encode('utf-8'), ctypes.byref(W))
+            self.elzabdr.pFillLines(2, "Sklep internetowy".encode('windows-1250'), ctypes.byref(W))
 
-            elzabdr.pReceiptPurchaserNIP(order.NIP.encode('utf-8'))
+            elzabdr.pReceiptPurchaserNIP(order.NIP.encode('windows-1250'))
             elzabdr.ReceiptBegin()
 
             for item in order.items:
-                elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('utf-8'),item.price)
+                elzabdr.pReceiptItemEx(1, item.name.encode('windows-1250'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('windows-1250'),item.price)
             elzabdr.ReceiptEnd(0)
         finally:
             if self.elzabdr.CommunicationEnd() != 0:
@@ -88,20 +88,20 @@ class Printer:
             self.elzabdr.pNonFiscalPrintoutLine(10, b"", 0)
 
             for item in order.items:
-                self.elzabdr.pNonFiscalPrintoutLine(40, item.name.encode('utf-8'), 1)
-                self.elzabdr.pNonFiscalPrintoutLine(40, str(item.amount/100).encode('utf-8'), 1)
+                self.elzabdr.pNonFiscalPrintoutLine(40, item.name.encode('windows-1250'), 1)
+                self.elzabdr.pNonFiscalPrintoutLine(40, str(item.amount/100).encode('windows-1250'), 1)
 
             # todo Zapisz zamownienie do pliku
             # todo Zwieksz numer zamowienia
             message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
-            self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('utf-8'), 1)
+            self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('windows-1250'), 1)
 
-            self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('utf-8'), 1)
+            self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('windows-1250'), 1)
             # Max line length is 36 characters
-            self.elzabdr.pNonFiscalPrintoutLine(1, str(order.comments).encode('utf-8'), 1)
+            self.elzabdr.pNonFiscalPrintoutLine(1, str(order.comments).encode('windows-1250'), 1)
             self.elzabdr.pNonFiscalPrintoutLine(11, b"Telefon", 1)
             # Print EAN code
-            self.elzabdr.pNonFiscalPrintoutLine(21, str(order.phone_number).encode('utf-8'), 1);
+            self.elzabdr.pNonFiscalPrintoutLine(21, str(order.phone_number).encode('windows-1250'), 1);
             #
             self.elzabdr.NonFiscalPrintoutEnd()
             wynik = self.elzabdr.CommunicationEnd()
