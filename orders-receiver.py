@@ -125,8 +125,6 @@ def print_receipt_for_order(order):
     for item in order['line_items']:
         total_price = float(item['total']) + float(item['total_tax'])
         receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, 1, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
-        # name, amount, vat_rate, price, measurement_unit
-        #elzabdr.pReceiptItemEx(1, item.name.encode('utf-8'), item.vat_rate, 0, item.amount, 2,item.measurement_unit.encode('utf-8'),item.price)
 
     # print receipt
     printer.print_receipt(receipt_order)

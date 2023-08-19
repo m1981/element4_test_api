@@ -46,12 +46,6 @@ class ReceiptItem:
 class Order:
     def __init__(self):
         self.items = []
-        self.czy_chce_nip = True
-        self.NIP = '9671083546'
-        self.order_id = 123
-        self.phone_number = '791630003'
-        self.na_miejscu_na_wynos = 'Na wynos'
-        self.comments = 'test'  # "notatki"
 
     def add_item(self, item):
         self.items.append(item)
