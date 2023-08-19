@@ -30,6 +30,8 @@ elzabdr.CommunicationEnd.restype = ctypes.c_int
 elzabdr.pErrMessage.argtypes = [ctypes.c_int, ctypes.c_char_p]
 elzabdr.pErrMessage.restype = ctypes.c_int
 
+elzabdr.pNonFiscalPrintoutLine.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
 
 def print_receipt(elzabdr):
@@ -38,11 +40,13 @@ def print_receipt(elzabdr):
     Port = 1
     Szybkosc = 9600
     Timeout = 5
-
     wynik = elzabdr.CommunicationInit(Port, Szybkosc, Timeout)
     if wynik == 0:
         wynik = elzabdr.pFillLines(2, "Sklep internetowy".encode('utf-8'), ctypes.byref(W))
         if wynik == 0:
+                # jezeli wybrano NIP to wydrukuj NIP
+                elzabdr.pReceiptPurchaserNIP(b"1234567890")
+
                 wynik = elzabdr.ReceiptBegin()
                 if wynik == 0:
                     wynik = elzabdr.pReceiptItemEx(1, b"TowarTestowy_A", 1, 0, 100, 2, b"szt.", 150)
@@ -72,17 +76,26 @@ def print_internal_order(elzabdr):
         return 1
     elzabdr.NonFiscalPrintoutBegin(53)
     elzabdr.pNonFiscalPrintoutLine(10, b"", 0)
-    elzabdr.pNonFiscalPrintoutLine(20, b"Zamowienie", 1)
-
     elzabdr.pNonFiscalPrintoutLine(40, b"TowarTestowy_A", 1)
     elzabdr.pNonFiscalPrintoutLine(40, b"TowarTestowy_B", 1)
 
     elzabdr.pNonFiscalPrintoutLine(1, b"Numer kolejny: 34", 1)
-    elzabdr.pNonFiscalPrintoutLine(11, b"Telefon 519 687 398", 1)
+    elzabdr.pNonFiscalPrintoutLine(1, b"Wynos", 1)
+    # Max line length is 36 characters
+    elzabdr.pNonFiscalPrintoutLine(1, "Bez boczku i mięsa bo jeste weganin".encode('utf-8'), 1)
+    elzabdr.pNonFiscalPrintoutLine(1, "em. Poprosze ekstra sałatę i na godzię 12:00".encode('utf-8'), 1)
+    elzabdr.pNonFiscalPrintoutLine(11, b"Telefon", 1)
+
+    # Zapisz zamownienie do pliku
+    # Zwieksz numer zamowienia
+
+    # Print EAN code
+    elzabdr.pNonFiscalPrintoutLine(21, b"791630003", 1);
+    #
     elzabdr.NonFiscalPrintoutEnd()
     wynik = elzabdr.CommunicationEnd()
     if wynik == 0:
         print("Program zakończony bezbłędnie")
 if __name__ == "__main__":
-    print_receipt(elzabdr)
+    #print_receipt(elzabdr)
     print_internal_order(elzabdr)
