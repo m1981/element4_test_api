@@ -55,11 +55,6 @@ def get_order_by_id(order_id):
     order = response.json()
     return order
 
-def accept_order(order_id):
-    order = get_order_by_id(order_id)
-    print_receipt_for_order(order)
-    # change_order_status(order_id, 'completed')
-
 
 def reject_order(order_id):
     change_order_status(order_id, 'cancelled')
@@ -75,7 +70,8 @@ def change_order_status(order_id, status):
 def handle_accept_order(order_id):
     order = get_order()  # Retrieve the order
     print_receipt_for_order(order)  # Print the receipt
-    accept_order(order_id)  # Accept the order (change order status)
+    #change_order_status(order_id, 'completed')
+
 
 label_order = tk.Label(root, text="")
 label_order.pack()
