@@ -22,7 +22,10 @@ def onFocusIn(event):
 root = tk.Tk()
 root.bind('<FocusIn>', onFocusIn)
 
+order_exists = False  # variable to track state of orders
+
 def get_order():
+    global order_exists
     base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("utf-8")).decode("utf-8")
     response = requests.get(
         "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
@@ -31,6 +34,13 @@ def get_order():
     data = response.json()
     on_hold_orders = [order for order in data if order['status'] == "on-hold"]
     sorted_orders = sorted(on_hold_orders, key=itemgetter('date_created'))
+    if sorted_orders and not order_exists:  # new order just arrived
+        root.deiconify()
+        threading.Thread(target=play_sound).start()
+        order_exists = True
+    elif sorted_orders == []:  # all orders have been processed
+        order_exists = False
+
     return sorted_orders[0] if sorted_orders else None
 
 def accept_order(order_id):
@@ -87,9 +97,10 @@ def update_order():
     global order_id
     order = get_order()
     if order:
+        root.attributes('-topmost', True)
         if root.state() == 'iconic':
             threading.Thread(target=play_sound).start()
-        root.attributes('-topmost', True)
+        #root.deiconify()
         label_no_orders.config(text = "")  # Clearing "No orders" text
         order_id = order['id']
         label_order.config(text = f"Zamowienie: {order_id}")
