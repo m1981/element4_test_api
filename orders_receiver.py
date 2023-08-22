@@ -1,3 +1,5 @@
+import os
+import json
 import base64
 import requests
 import time
@@ -7,184 +9,205 @@ from operator import itemgetter
 import threading
 import winsound
 from receipt import Order, ReceiptItem, Printer, elzabdr
-# setup printer
-printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
-
 import argparse
 
-# Initialize the parser
-parser = argparse.ArgumentParser(description="Process some integers.")
+class OrderManager:
+    def __init__(self, use_local_files=True, local_files_path='./'):
+        self.use_local_files = use_local_files
+        self.local_files_path = local_files_path
+        self.printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
+        self.order_exists = False
+        self.order_id = None
+        self.client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
+        self.client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
+        self.rest_api_url = "https://fabrykasmakow.com.pl/wp-json/wc/v3"
+        self.treeview = None
+        self.label_order = None
+        self.label_no_orders = None
+        self.label_phone = None
+        self.label_nip = None
+        self.label_comments = None
+        self.label_na_miejscu_na_wynos = None
+        self.process_status = None
 
-# Add argument
-parser.add_argument("--status", type=str, required=True, help="Order status")
+        self.root = tk.Tk()
+        self.root.bind('<FocusIn>', self.onFocusIn)
 
-# Parse arguments
-args = parser.parse_args()
+        self.button_accept = tk.Button(self.root, text="Accept Order", command=lambda: self.accept_order(self.order_id))
+        self.button_accept.pack()
 
-client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
-client_secret = "cs_d3c5698ba2c94885c82f906b3c1c440fc9ae1468"
+        self.button_reject = tk.Button(self.root, text="Reject Order", command=lambda: self.reject_order(self.order_id))
+        self.button_reject.pack()
 
-def play_sound():
-    winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+        self.label_order = tk.Label(self.root, text="")
+        self.label_order.pack()
 
-def stop_sound():
-    winsound.PlaySound(None, winsound.SND_ASYNC)
+        self.label_nip = tk.Label(self.root, text="")
+        self.label_nip.pack()
 
-def onFocusIn(event):
-    stop_sound()
+        self.label_phone = tk.Label(self.root, text="")
+        self.label_phone.pack()
 
-root = tk.Tk()
-root.bind('<FocusIn>', onFocusIn)
+        self.label_na_miejscu_na_wynos = tk.Label(self.root, text="")
+        self.label_na_miejscu_na_wynos.pack()
 
-order_exists = False  # variable to track state of orders
+        self.label_comments = tk.Label(self.root, text="")
+        self.label_comments.pack()
 
-def get_order():
-    global order_exists
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
-    response = requests.get(
-        "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
-        headers={"Authorization": f"Basic {base64_encoded_data}"}
-    )
+        self.label_no_orders = tk.Label(self.root, text="", font = ("Helvetica", 18), fg = "red")
+        self.label_no_orders.pack()
 
-    try:
-        response = requests.get(
-            "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
+        self.treeview = ttk.Treeview(self.root)
+        self.treeview.pack()
+        self.treeview["columns"]=("1","2","3")
+        self.treeview['show'] = 'headings'
+        self.treeview.column("1", width=150 )
+        self.treeview.column("2", width=100)
+        self.treeview.column("3", width=150)
+        self.treeview.heading("1", text="Item")
+        self.treeview.heading("2", text="Quantity")
+        self.treeview.heading("3", text="Price Including Tax")
+
+        self.root.after(5000, self.update_order)
+
+
+    def parse_args(self):
+        self.parser = argparse.ArgumentParser(description="Process some integers.")
+        self.parser.add_argument("--status", type=str, required=True, help="Order status")
+        self.args = self.parser.parse_args()
+        self.process_status = self.args.status
+
+    def run(self):
+        self.root.mainloop()
+
+    def play_sound(self):
+        winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+
+    def stop_sound(self):
+        winsound.PlaySound(None, winsound.SND_ASYNC)
+
+    def onFocusIn(self, event):
+        self.stop_sound()
+
+    def get_orders(self):
+        if self.use_local_files:
+            return self.get_local_orders(self.local_files_path)
+        else:
+            base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+            response = requests.get(
+                f"{self.rest_api_url}/orders",
+                headers={"Authorization": f"Basic {base64_encoded_data}"}
+            )
+            return response.json()
+
+    def change_order_status(self, order_id, new_status):
+        base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+        data = {"status": new_status}
+        response = requests.put(
+            f"{self.rest_api_url}/orders/{order_id}",
             headers={"Authorization": f"Basic {base64_encoded_data}"},
-            timeout=5  # Add a timeout so it's not waiting indefinitely
+            json=data
         )
-        response.raise_for_status()  # If response was unsuccessful, raise an HTTPError
-    except RequestException as e:
-        print(f"Failed to fetch orders. Reason: {str(e)}")
-        return []  # Return an empty list or None, or handle as you see fit
-    else:
-        data = response.json()    # Move .json() call here to avoid JSONDecodeError when request failed
 
-    on_hold_orders = [order for order in data if order['status'] == args.status]
-    sorted_orders = sorted(on_hold_orders, key=itemgetter('date_created'))
+    def get_local_orders(self, path):
+        orders = []
+        print('asasas')
+        for filename in os.listdir(path):
+            if filename.endswith(".json"):
+                print('2222222')
 
-    if sorted_orders:  # new order just arrived
-        root.deiconify()
-        threading.Thread(target=play_sound).start()
+                with open(os.path.join(path, filename)) as f:
+                    orders.append(json.load(f))
+        print(orders)
+        return orders
 
-    return sorted_orders[0] if sorted_orders else None
+    def is_processing(self, order):
+        assert self.process_status
+        return order["status"] == self.process_status
 
-def get_order_by_id(order_id):
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
-    response = requests.get(
-        f"https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/{order_id}",
-        headers={"Authorization": f"Basic {base64_encoded_data}"}
-    )
-    order = response.json()
-    return order
+    def order_processing_effects(self, order):
+        self.show_order(order)
+        self.play_sound()
+        self.enable_buttons()
+
+    def order_not_processing_effects(self):
+        self.show_no_order()
+        self.disable_buttons()
+
+    def update_order(self):
+        orders = self.get_orders()
+        for order in orders:
+            if self.is_processing(order):
+                print('is_processing')
+                self.order_id = order["id"]
+                self.order_processing_effects(order)
+                break
+        else:
+            self.order_not_processing_effects()
+        self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking next orders
+
+    def show_order(self, order):
+        self.populate_ui(order)
+
+    def show_no_order(self):
+        pass  # Implement showing no order in UI
+
+    def play_sound(self):
+        pass  # Implement playing sound
+
+    def enable_buttons(self):
+        self.button_accept.config(state=tk.NORMAL)
+        self.button_reject.config(state=tk.NORMAL)
+
+    def disable_buttons(self):
+        self.button_accept.config(state=tk.DISABLED)
+        self.button_reject.config(state=tk.DISABLED)
+
+    def accept_order(self, order_id):
+        self.process_order(self.get_order_by_id(order_id))
+        self.button_accept.config(state=tk.DISABLED)
+        self.button_reject.config(state=tk.DISABLED)
+        print(f"Accepted order {order_id}.")
+        self.label_order.config(text = "No Orders. Waiting...")
+
+    def reject_order(self, order_id):  # TODO: Adjust the order status depending on your requirements.
+        self.change_order_status(order_id, 'cancelled')
+        self.button_accept.config(state=tk.DISABLED)
+        self.button_reject.config(state=tk.DISABLED)
+        print(f"Rejected order {order_id}.")
+        self.label_order.config(text = "No Orders. Waiting...")
 
 
-def reject_order(order_id):
-    change_order_status(order_id, 'cancelled')
 
-def change_order_status(order_id, status):
-    base64_encoded_data = base64.b64encode(f"{client_key}:{client_secret}".encode("windows-1250")).decode("windows-1250")
-    order_update_url = f"https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/{order_id}"
-    headers = {"Authorization": f"Basic {base64_encoded_data}"}
-    data = {"status": status}
-    response = requests.put(order_update_url, headers=headers, json=data)
-    response.raise_for_status()
-
-
-
-label_order = tk.Label(root, text="")
-label_order.pack()
-
-label_nip = tk.Label(root, text="")
-label_nip.pack()
-
-label_phone = tk.Label(root, text="")
-label_phone.pack()
-
-label_na_miejscu_na_wynos = tk.Label(root, text="")
-label_na_miejscu_na_wynos.pack()
-
-label_comments = tk.Label(root, text="")
-label_comments.pack()
-
-label_no_orders = tk.Label(root, text="", font = ("Helvetica", 18), fg = "red")
-label_no_orders.pack()
-
-treeview = ttk.Treeview(root)
-treeview.pack()
-treeview["columns"]=("1","2","3")
-treeview['show'] = 'headings'
-treeview.column("1", width=150 )
-treeview.column("2", width=100)
-treeview.column("3", width=150)
-treeview.heading("1", text="Item")
-treeview.heading("2", text="Quantity")
-treeview.heading("3", text="Price Including Tax")
-
-button_accept = tk.Button(root, text="Accept Order", command=lambda: accept_order(order_id))
-button_accept.pack()
-
-button_reject = tk.Button(root, text="Reject Order", command=lambda: reject_order(order_id))
-button_reject.pack()
-
-def accept_order(order_id):
-    order = get_order()  # Retrieve the order
-    print_receipt_for_order(order)  # Print the receipt
-    change_order_status(order_id, 'completed')
-    get_order()  # Directly call get_order after accepting an order
-
-def reject_order(order_id):
-    change_order_status(order_id, 'cancelled')
-    get_order()  # Directly call get_order again after rejecting an order too
-
-def print_receipt_for_order(order):
-    # Convert order data. Note that you will need to map fields from the order
-    # to the ReceiptItem accordingly
-    receipt_order = Order()
-    vat_id = 2
-    receipt_order.NIP = order['billing']['nip_do_paragonu']
-    receipt_order.order_id = order['id']
-    receipt_order.phone_number = order['billing']['phone']
-    receipt_order.na_miejscu_na_wynos = order['billing']['na_miejscu_na_wynos']
-    receipt_order.comments = order['dodatki_do_pizzy']['notatki']
-    for item in order['line_items']:
-        total_price = float(item['total']) + float(item['total_tax'])
-        receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
-
-    printer.print_receipt(receipt_order)
-    printer.print_internal_order(receipt_order)
-
-def update_order():
-    global order_id
-    order = get_order()
-    if order:
-        root.attributes('-topmost', True)
-        if root.state() == 'iconic':
-            threading.Thread(target=play_sound).start()
-        #root.deiconify()
-        label_no_orders.config(text = "")  # Clearing "No orders" text
-        order_id = order['id']
-        label_order.config(text = f"Zamowienie: {order_id}")
-        label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
-        label_phone.config(text = f"Telefon: {order['billing']['phone']}")
-        label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
-        label_comments.config(text = f"Komentarz: {order['dodatki_do_pizzy']['notatki']}")
-        treeview.delete(*treeview.get_children())
+    def print_receipt(self, order):
+        receipt_order = Order()
+        vat_id = 2
+        receipt_order.NIP = order['billing']['nip_do_paragonu']
+        receipt_order.order_id = order['id']
+        receipt_order.phone_number = order['billing']['phone']
+        receipt_order.na_miejscu_na_wynos = order['billing']['na_miejscu_na_wynos']
+        receipt_order.comments = order['dodatki_do_pizzy']['notatki']
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
-            treeview.insert("", 'end', values=(item['name'], item['quantity'], total_price))
-    else:
-        root.attributes('-topmost', False)
-        label_order.config(text = "")
-        label_nip.config(text = "")
-        label_phone.config(text = "")
-        label_na_miejscu_na_wynos.config(text = "")
-        label_comments.config(text = "")
-        treeview.delete(*treeview.get_children())
-        label_no_orders.config(text = "No orders currently")
-    root.after(5000, update_order)
+            receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
+        # printer.print_receipt(receipt_order)
+        # printer.print_internal_order(receipt_order)
 
-if __name__ == "__main__":
+    def populate_ui(self, order):
+        self.root.attributes('-topmost', True)
+        self.label_no_orders.config(text="")
+        self.order_id = order['id']
+        self.label_order.config(text = f"Zamowienie: {self.order_id}")
+        self.label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
+        self.label_phone.config(text = f"Telefon: {order['billing']['phone']}")
+        self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
+        self.label_comments.config(text = f"Komentarz: {order['dodatki_do_pizzy']['notatki']}")
+        self.treeview.delete(*self.treeview.get_children())
+        for item in order['line_items']:
+            self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
 
 
-    root.after(5000, update_order)
-    root.mainloop()
+if __name__=="__main__":
+  manager = OrderManager()
+  manager.parse_args()
+  manager.run()
