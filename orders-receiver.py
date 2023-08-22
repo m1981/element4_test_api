@@ -61,12 +61,10 @@ def get_order():
 
     on_hold_orders = [order for order in data if order['status'] == args.status]
     sorted_orders = sorted(on_hold_orders, key=itemgetter('date_created'))
-    if sorted_orders and not order_exists:  # new order just arrived
+
+    if sorted_orders:  # new order just arrived
         root.deiconify()
         threading.Thread(target=play_sound).start()
-        order_exists = True
-    elif sorted_orders == []:  # all orders have been processed
-        order_exists = False
 
     return sorted_orders[0] if sorted_orders else None
 
@@ -91,10 +89,6 @@ def change_order_status(order_id, status):
     response = requests.put(order_update_url, headers=headers, json=data)
     response.raise_for_status()
 
-def handle_accept_order(order_id):
-    order = get_order()  # Retrieve the order
-    print_receipt_for_order(order)  # Print the receipt
-    change_order_status(order_id, 'completed')
 
 
 label_order = tk.Label(root, text="")
@@ -126,12 +120,21 @@ treeview.heading("1", text="Item")
 treeview.heading("2", text="Quantity")
 treeview.heading("3", text="Price Including Tax")
 
-
-button_accept = tk.Button(root, text="Accept Order", command=lambda: handle_accept_order(order_id))
+button_accept = tk.Button(root, text="Accept Order", command=lambda: accept_order(order_id))
 button_accept.pack()
 
 button_reject = tk.Button(root, text="Reject Order", command=lambda: reject_order(order_id))
 button_reject.pack()
+
+def accept_order(order_id):
+    order = get_order()  # Retrieve the order
+    print_receipt_for_order(order)  # Print the receipt
+    change_order_status(order_id, 'completed')
+    get_order()  # Directly call get_order after accepting an order
+
+def reject_order(order_id):
+    change_order_status(order_id, 'cancelled')
+    get_order()  # Directly call get_order again after rejecting an order too
 
 def print_receipt_for_order(order):
     # Convert order data. Note that you will need to map fields from the order
