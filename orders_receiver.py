@@ -101,21 +101,47 @@ class OrderManager:
             return response.json()
 
     def change_order_status(self, order_id, new_status):
-        base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-        data = {"status": new_status}
-        response = requests.put(
-            f"{self.rest_api_url}/orders/{order_id}",
-            headers={"Authorization": f"Basic {base64_encoded_data}"},
-            json=data
-        )
+        if self.use_local_files:
+            data = self.get_order_by_id(order_id)
+            data['status'] = new_status
+            with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), 'w') as f:
+                f.write(json.dumps(data))
+        else:
+            # The previous implementation for making a PUT request to the API
+            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+            data = {"status": new_status}
+            response = requests.put(
+                f"{self.rest_api_url}/orders/{order_id}",
+                headers={"Authorization": f"Basic {base64_encoded_data}"},
+                json=data
+            )
 
+    def get_order_by_id(self, order_id):
+        if self.use_local_files:
+            with open(os.path.join(self.local_files_path, f'order_{order_id}.json')) as f:
+                return json.load(f)
+        else:
+            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+            response = requests.get(
+                f"{self.rest_api_url}/orders/{order_id}",
+                headers={"Authorization": f"Basic {base64_encoded_data}"}
+            )
+            return response.json()
+
+    def reset_orders(self):
+        '''Reset the status field of all orders to 'processing' in local JSON files.'''
+        if self.use_local_files:
+            for filename in os.listdir(self.local_files_path):
+                if filename.endswith(".json"):
+                    with open(os.path.join(self.local_files_path, filename)) as f:
+                        data = json.load(f)
+                        data['status'] = 'processing'
+                    with open(os.path.join(self.local_files_path, filename), 'w') as f:
+                        f.write(json.dumps(data))
     def get_local_orders(self, path):
         orders = []
-        print('asasas')
         for filename in os.listdir(path):
             if filename.endswith(".json"):
-                print('2222222')
-
                 with open(os.path.join(path, filename)) as f:
                     orders.append(json.load(f))
         print(orders)
@@ -205,6 +231,11 @@ class OrderManager:
         self.treeview.delete(*self.treeview.get_children())
         for item in order['line_items']:
             self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
+
+
+    def process_order(self, order):
+        self.populate_ui(order)
+        self.change_order_status(order['id'], 'completed')
 
 
 if __name__=="__main__":
