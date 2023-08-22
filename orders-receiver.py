@@ -45,7 +45,20 @@ def get_order():
         "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
         headers={"Authorization": f"Basic {base64_encoded_data}"}
     )
-    data = response.json()
+
+    try:
+        response = requests.get(
+            "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders",
+            headers={"Authorization": f"Basic {base64_encoded_data}"},
+            timeout=5  # Add a timeout so it's not waiting indefinitely
+        )
+        response.raise_for_status()  # If response was unsuccessful, raise an HTTPError
+    except RequestException as e:
+        print(f"Failed to fetch orders. Reason: {str(e)}")
+        return []  # Return an empty list or None, or handle as you see fit
+    else:
+        data = response.json()    # Move .json() call here to avoid JSONDecodeError when request failed
+
     on_hold_orders = [order for order in data if order['status'] == args.status]
     sorted_orders = sorted(on_hold_orders, key=itemgetter('date_created'))
     if sorted_orders and not order_exists:  # new order just arrived
