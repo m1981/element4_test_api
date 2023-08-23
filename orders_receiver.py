@@ -241,15 +241,20 @@ class OrderManager:
         self.update_buttons(state=tk.DISABLED)
 
     def update_order(self):
-        orders = self.get_orders()
-        for order in orders:
-            if self.is_processing(order):
-                self.order_id = order["id"]
-                self.order_processing_effects(order)
-                break
-        else:
-            self.order_not_processing_effects()
-        self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking next orders
+        try:
+            orders = self.get_orders()
+            for order in orders:
+                logger.info(f"Single Order data: {order}")
+                if self.is_processing(order):
+                    self.order_id = order["id"]
+                    self.order_processing_effects(order)
+                    break
+            else:
+                self.order_not_processing_effects()
+        except Exception as e:
+            logger.error(f"An error occurred in the order update process: {str(e)}")
+        finally:
+            self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
 
     def show_order(self, order):
         self.populate_ui(order)
