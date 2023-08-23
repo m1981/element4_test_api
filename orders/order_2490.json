@@ -1,9 +1,9 @@
 {
-    "id": 12345,
+    "id": 2490,
     "status": "processing",
     "billing": {
-        "nip_do_paragonu": "1234567890",
-        "phone": "123456789",
+        "nip_do_paragonu": "967095462",
+        "phone": "519765400",
         "na_miejscu_na_wynos": "Na miejscu"
     },
     "dodatki_do_pizzy": {
@@ -14,11 +14,13 @@
             "name": "Pizza Margherita",
             "quantity": 1,
             "total": "15.00"
+            "total_tax": "1.00"
         },
         {
             "name": "Coca Cola",
             "quantity": 2,
             "total": "5.00"
+            "total_tax": "1.00"
         }
     ]
 }
