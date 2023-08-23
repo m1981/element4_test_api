@@ -194,14 +194,16 @@ class OrderManager:
         self.button_accept.config(state=tk.DISABLED)
         self.button_reject.config(state=tk.DISABLED)
         print(f"Accepted order {order_id}.")
-        self.label_order.config(text = "No Orders. Waiting...")
+        self.cleanup_ui()
+        self.label_no_orders.config(text = "No orders currently")
 
     def reject_order(self, order_id):  # TODO: Adjust the order status depending on your requirements.
         self.change_order_status(order_id, 'cancelled')
         self.button_accept.config(state=tk.DISABLED)
         self.button_reject.config(state=tk.DISABLED)
         print(f"Rejected order {order_id}.")
-        self.label_order.config(text = "No Orders. Waiting...")
+        self.cleanup_ui()
+        self.label_no_orders.config(text = "No orders currently")
 
 
 
@@ -231,6 +233,18 @@ class OrderManager:
         self.treeview.delete(*self.treeview.get_children())
         for item in order['line_items']:
             self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
+
+
+    def cleanup_ui(self):
+        # Clear all Labels
+        self.label_no_orders.config(text="")
+        self.label_order.config(text="")
+        self.label_nip.config(text="")
+        self.label_phone.config(text="")
+        self.label_na_miejscu_na_wynos.config(text="")
+        self.label_comments.config(text="")
+        # Clear Treeview
+        self.treeview.delete(*self.treeview.get_children())
 
 
     def process_order(self, order):
