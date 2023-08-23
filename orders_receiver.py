@@ -144,7 +144,6 @@ class OrderManager:
             if filename.endswith(".json"):
                 with open(os.path.join(path, filename)) as f:
                     orders.append(json.load(f))
-        print(orders)
         return orders
 
     def is_processing(self, order):
@@ -154,17 +153,16 @@ class OrderManager:
     def order_processing_effects(self, order):
         self.show_order(order)
         self.play_sound()
-        self.enable_buttons()
+        self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
         self.show_no_order()
-        self.disable_buttons()
+        self.update_buttons(state=tk.DISABLED)
 
     def update_order(self):
         orders = self.get_orders()
         for order in orders:
             if self.is_processing(order):
-                print('is_processing')
                 self.order_id = order["id"]
                 self.order_processing_effects(order)
                 break
@@ -176,35 +174,32 @@ class OrderManager:
         self.populate_ui(order)
 
     def show_no_order(self):
-        pass  # Implement showing no order in UI
+        # Cleanup UI
+        self.cleanup_ui()
 
-    def play_sound(self):
-        pass  # Implement playing sound
+        # Display message
+        self.label_no_orders.config(text="No orders currently.")
+        self.update_buttons(tk.DISABLED)
 
-    def enable_buttons(self):
-        self.button_accept.config(state=tk.NORMAL)
-        self.button_reject.config(state=tk.NORMAL)
+    def update_buttons(self, state):
+        self.button_accept.config(state=state)
+        self.button_reject.config(state=state)
 
-    def disable_buttons(self):
-        self.button_accept.config(state=tk.DISABLED)
-        self.button_reject.config(state=tk.DISABLED)
+    def update_ui_after_order_process(self, text):
+        self.cleanup_ui()
+        self.label_no_orders.config(text = text)
 
     def accept_order(self, order_id):
         self.process_order(self.get_order_by_id(order_id))
-        self.button_accept.config(state=tk.DISABLED)
-        self.button_reject.config(state=tk.DISABLED)
+        self.update_buttons(tk.DISABLED)
         print(f"Accepted order {order_id}.")
-        self.cleanup_ui()
-        self.label_no_orders.config(text = "No orders currently")
+        self.update_ui_after_order_process("No orders currently")
 
     def reject_order(self, order_id):  # TODO: Adjust the order status depending on your requirements.
         self.change_order_status(order_id, 'cancelled')
-        self.button_accept.config(state=tk.DISABLED)
-        self.button_reject.config(state=tk.DISABLED)
+        self.update_buttons(tk.DISABLED)
         print(f"Rejected order {order_id}.")
-        self.cleanup_ui()
-        self.label_no_orders.config(text = "No orders currently")
-
+        self.update_ui_after_order_process("No orders currently")
 
 
     def print_receipt(self, order):
