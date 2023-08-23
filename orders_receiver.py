@@ -10,6 +10,15 @@ import threading
 import winsound
 from receipt import Order, ReceiptItem, Printer, elzabdr
 import argparse
+import logging
+
+# At the top of the script
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+handler = logging.FileHandler('app_errors.log')
+handler.setLevel(logging.ERROR)
+logger.addHandler(handler)
+
 
 class OrderManager:
     def __init__(self, use_local_files=True, local_files_path='./'):
@@ -111,21 +120,47 @@ class OrderManager:
             )
             return response.json()
 
-    def change_order_status(self, order_id, new_status):
-        if self.use_local_files:
-            data = self.get_order_by_id(order_id)
-            data['status'] = new_status
-            with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), 'w') as f:
-                f.write(json.dumps(data))
-        else:
-            # The previous implementation for making a PUT request to the API
-            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-            data = {"status": new_status}
-            response = requests.put(
-                f"{self.rest_api_url}/orders/{order_id}",
-                headers={"Authorization": f"Basic {base64_encoded_data}"},
-                json=data
-            )
+     def change_order_status(self, order_id, new_status):
+        try:
+            if self.use_local_files:
+                data = self.get_order_by_id(order_id)
+                logger.info(f"Order data: {data}")  # Log the order data
+                data['status'] = new_status
+                with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), 'w') as f:
+                    f.write(json.dumps(data))
+
+            else:
+                base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+                data = {"status": new_status}
+                r = requests.put(
+                    f"{self.rest_api_url}/orders/{order_id}",
+                    headers={"Authorization": f"Basic {base64_encoded_data}"},
+                    json=data
+                )
+                r.raise_for_status()
+                logger.info(f"Response: {r.json()}")  # Log the response from the server
+
+        except requests.RequestException as re:
+            logger.error(f"Error connecting with API: {re}")
+            return None
+
+        except PermissionError:
+            logger.error(f"Permission denied: Unable to write to {os.path.join(self.local_files_path, f'order_{order_id}.json')}")
+            return None
+
+        except IOError as e:
+            logger.error(f"File error occurred: {e}")
+            return None
+
+        except KeyError as e:
+            logger.error(f"Order data is missing key: {e}")
+            return None
+
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {str(e)}")
+            return None
+
+
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
