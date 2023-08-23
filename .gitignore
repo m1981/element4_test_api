@@ -1,6 +1,10 @@
 # Ignore everything
-*
-# But not these files...
-!.gitignore
-!*.py
-!*.bat
+.idea
+build
+__pycache__
+dist
+logsy
+*.spec
+logs
+
+
