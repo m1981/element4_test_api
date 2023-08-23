@@ -57,7 +57,7 @@ class Printer:
         self.port = port
         self.speed = speed
         self.timeout = timeout
-        self.local = True
+        self.local = False
 
     def print_receipt(self, order):
         if self.local:
