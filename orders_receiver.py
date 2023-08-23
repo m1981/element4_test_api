@@ -126,15 +126,34 @@ class OrderManager:
         self.window_in_focus.set(False)  # Indicate that window lost focus
 
     def get_orders(self):
-        if self.use_local_files:
-            return self.get_local_orders(self.local_files_path)
-        else:
-            base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-            response = requests.get(
-                f"{self.rest_api_url}/orders",
-                headers={"Authorization": f"Basic {base64_encoded_data}"}
-            )
-            return response.json()
+        orders = []
+        try:
+            if self.use_local_files:
+                orders = self.get_local_orders(self.local_files_path)
+            else:
+                base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+                response = requests.get(
+                    f"{self.rest_api_url}/orders",
+                    headers={"Authorization": f"Basic {base64_encoded_data}"}
+                )
+                response.raise_for_status() # Raise exception if status code indicates an HTTP error
+                orders = response.json()
+
+        except requests.RequestException as re:
+            logger.error(f"Error connecting with API: {str(re)}")
+
+        except json.decoder.JSONDecodeError as json_err:
+            logger.error(f"JSON decoding error while fetching orders: {str(json_err)}")
+
+        except IOError as ioerr:
+            logger.error(f"File operation error while fetching orders: {str(ioerr)}")
+
+        except Exception as ex:
+            logger.error(f"An unexpected error occurred while fetching orders: {str(ex)}")
+
+        finally:
+            logger.info(f"Fetched orders data: {orders}")
+            return orders
 
     def change_order_status(self, order_id, new_status):
         try:
