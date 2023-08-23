@@ -2,24 +2,14 @@ import os
 import json
 import base64
 import requests
-import time
 import tkinter as tk
 from tkinter import ttk
-from operator import itemgetter
 import threading
 import winsound
-from receipt import Order, ReceiptItem, Printer, elzabdr
 import argparse
 import logging
-
-import glob
-import os
-import logging
 from logging.handlers import TimedRotatingFileHandler
-
 from receipt import Order, ReceiptItem, Printer, elzabdr
-# setup printer
-printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -65,42 +55,67 @@ class OrderManager:
         self.sound_playing = threading.Event()  # Indicator for whether sound is playing
         self.window_in_focus = tk.BooleanVar()  # Indicator for whether window is in focus
 
-        self.button_accept = tk.Button(self.root, text="Accept Order", command=lambda: self.accept_order(self.order_id))
-        self.button_accept.pack()
+        # Create a frame for the labels.
+        frame_labels = tk.Frame(self.root)
+        frame_labels.pack(fill='x')
 
-        self.button_reject = tk.Button(self.root, text="Reject Order", command=lambda: self.reject_order(self.order_id))
-        self.button_reject.pack()
+        order_label = tk.Label(frame_labels, text="Zamowienie ID", anchor='e')
+        order_label.grid(row=0, column=0, sticky='e')
+        self.label_order = tk.Label(frame_labels, text="1234", anchor='w')
+        self.label_order.grid(row=0, column=1, sticky='w')
 
-        self.label_order = tk.Label(self.root, text="")
-        self.label_order.pack()
+        nip_label = tk.Label(frame_labels, text="NIP:", anchor='e')
+        nip_label.grid(row=1, column=0, sticky='e')
+        self.label_nip = tk.Label(frame_labels, text="", anchor='w')
+        self.label_nip.grid(row=1, column=1, sticky='w')
 
-        self.label_nip = tk.Label(self.root, text="")
-        self.label_nip.pack()
+        phone_label = tk.Label(frame_labels, text="Tel:", anchor='e')
+        phone_label.grid(row=2, column=0, sticky='e')
+        self.label_phone = tk.Label(frame_labels, text="", anchor='w')
+        self.label_phone.grid(row=2, column=1, sticky='w')
 
-        self.label_phone = tk.Label(self.root, text="")
-        self.label_phone.pack()
+        nmnw_label = tk.Label(frame_labels, text="Gdzie:", anchor='e')
+        nmnw_label.grid(row=3, column=0, sticky='e')
+        self.label_na_miejscu_na_wynos = tk.Label(frame_labels, text="", anchor='w')
+        self.label_na_miejscu_na_wynos.grid(row=3, column=1, sticky='w')
 
-        self.label_na_miejscu_na_wynos = tk.Label(self.root, text="")
-        self.label_na_miejscu_na_wynos.pack()
+        comments_label = tk.Label(frame_labels, text="Komentarz:", anchor='e')
+        comments_label.grid(row=4, column=0, sticky='e')
+        self.label_comments = tk.Label(frame_labels, text="", anchor='w')
+        self.label_comments.grid(row=4, column=1, sticky='w')
 
-        self.label_comments = tk.Label(self.root, text="")
-        self.label_comments.pack()
-
-        self.label_no_orders = tk.Label(self.root, text="", font = ("Helvetica", 18), fg = "red")
+        self.label_no_orders = tk.Label(self.root, text="", font = ("Helvetica", 18), fg = "green")
         self.label_no_orders.pack()
 
-        self.treeview = ttk.Treeview(self.root)
-        self.treeview.pack()
+        # Create a frame for the buttons.
+        frame_buttons = tk.Frame(self.root)
+        frame_buttons.pack(pady=10)
+
+        self.button_accept = tk.Button(frame_buttons, text="Akceptuj",
+                                       command=lambda: self.accept_order(self.order_id))
+        self.button_accept.pack(side='left', padx=5)
+
+        self.button_reject = tk.Button(frame_buttons, text="Odrzuć",
+                                       command=lambda: self.reject_order(self.order_id))
+        self.button_reject.pack(side='left', padx=5)
+
+        # Create a frame for the Treeview.
+        frame_treeview = tk.Frame(self.root)
+        frame_treeview.pack(fill='both', expand=True)
+
+        self.treeview = ttk.Treeview(frame_treeview)
+        self.treeview.pack(fill='both', expand=True)
         self.treeview["columns"]=("1","2","3")
         self.treeview['show'] = 'headings'
-        self.treeview.column("1", width=150 )
+        self.treeview.column("1", width=150)
         self.treeview.column("2", width=100)
         self.treeview.column("3", width=150)
-        self.treeview.heading("1", text="Item")
-        self.treeview.heading("2", text="Quantity")
-        self.treeview.heading("3", text="Price Including Tax")
+        self.treeview.heading("1", text="Danie")
+        self.treeview.heading("2", text="Ilość")
+        self.treeview.heading("3", text="Cena")
 
         self.root.after(5000, self.update_order)
+
 
 
     def parse_args(self):
@@ -270,7 +285,7 @@ class OrderManager:
         self.cleanup_ui()
 
         # Display message
-        self.label_no_orders.config(text="No orders currently.")
+        self.label_no_orders.config(text="Oczekuje na zamówienia...")
         self.update_buttons(tk.DISABLED)
 
     def update_buttons(self, state):
@@ -288,7 +303,7 @@ class OrderManager:
         print(f"Accepted order {order_id}.")
         self.update_ui_after_order_process("No orders currently")
 
-    def reject_order(self, order_id):  # TODO: Adjust the order status depending on your requirements.
+    def reject_order(self, order_id):
         self.change_order_status(order_id, 'cancelled')
         self.update_buttons(tk.DISABLED)
         print(f"Rejected order {order_id}.")
@@ -306,21 +321,25 @@ class OrderManager:
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
             receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
-        printer.print_receipt(receipt_order)
-        printer.print_internal_order(receipt_order)
+        self.printer.print_receipt(receipt_order)
+        self.printer.print_internal_order(receipt_order)
+
 
     def populate_ui(self, order):
-        self.root.attributes('-topmost', True)
-        self.label_no_orders.config(text="")
-        self.order_id = order['id']
-        self.label_order.config(text = f"Zamowienie: {self.order_id}")
-        self.label_nip.config(text = f"NIP: {order['billing']['nip_do_paragonu']}")
-        self.label_phone.config(text = f"Telefon: {order['billing']['phone']}")
-        self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
-        self.label_comments.config(text = f"Komentarz: {order['dodatki_do_pizzy']['notatki']}")
-        self.treeview.delete(*self.treeview.get_children())
-        for item in order['line_items']:
-            self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
+        try:
+            self.root.attributes('-topmost', True)
+            self.label_no_orders.config(text="")
+            self.order_id = order['id']
+            self.label_order.config(text = f"{self.order_id}")
+            self.label_nip.config(text = f"{order['billing']['nip_do_paragonu']}")
+            self.label_phone.config(text = f"{order['billing']['phone']}")
+            self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
+            self.label_comments.config(text = f"{order['dodatki_do_pizzy']['notatki']}")
+            self.treeview.delete(*self.treeview.get_children())
+            for item in order['line_items']:
+                self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
+        except Exception as e:
+            raise e
 
 
     def cleanup_ui(self):
