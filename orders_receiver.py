@@ -41,7 +41,7 @@ logger.addHandler(handler)
 
 
 class OrderManager:
-    def __init__(self, use_local_files=True, local_files_path='./'):
+    def __init__(self, use_local_files=False, local_files_path='./'):
         self.use_local_files = use_local_files
         self.local_files_path = local_files_path
         self.printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
