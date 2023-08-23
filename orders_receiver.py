@@ -17,6 +17,10 @@ import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
+from receipt import Order, ReceiptItem, Printer, elzabdr
+# setup printer
+printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -219,6 +223,8 @@ class OrderManager:
                         data['status'] = 'processing'
                     with open(os.path.join(self.local_files_path, filename), 'w') as f:
                         f.write(json.dumps(data))
+
+
     def get_local_orders(self, path):
         orders = []
         for filename in os.listdir(path):
@@ -276,6 +282,7 @@ class OrderManager:
         self.label_no_orders.config(text = text)
 
     def accept_order(self, order_id):
+        self.print_receipt(self.get_order_by_id(order_id))
         self.change_order_status(order_id, 'completed')
         self.update_buttons(tk.DISABLED)
         print(f"Accepted order {order_id}.")
@@ -299,8 +306,8 @@ class OrderManager:
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
             receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
-        # printer.print_receipt(receipt_order)
-        # printer.print_internal_order(receipt_order)
+        printer.print_receipt(receipt_order)
+        printer.print_internal_order(receipt_order)
 
     def populate_ui(self, order):
         self.root.attributes('-topmost', True)
@@ -326,8 +333,6 @@ class OrderManager:
         self.label_comments.config(text="")
         # Clear Treeview
         self.treeview.delete(*self.treeview.get_children())
-
-
 
 
 if __name__=="__main__":
