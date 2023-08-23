@@ -1,0 +1,1 @@
+python orders_receiver.py --status processing
