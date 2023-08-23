@@ -1,0 +1,24 @@
+{
+    "id": 12345,
+    "status": "processing",
+    "billing": {
+        "nip_do_paragonu": "1234567890",
+        "phone": "123456789",
+        "na_miejscu_na_wynos": "Na miejscu"
+    },
+    "dodatki_do_pizzy": {
+        "notatki": "Please add extra cheese."
+    },
+    "line_items": [
+        {
+            "name": "Pizza Margherita",
+            "quantity": 1,
+            "total": "15.00"
+        },
+        {
+            "name": "Coca Cola",
+            "quantity": 2,
+            "total": "5.00"
+        }
+    ]
+}
