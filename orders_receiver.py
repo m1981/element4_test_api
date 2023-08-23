@@ -12,11 +12,27 @@ from receipt import Order, ReceiptItem, Printer, elzabdr
 import argparse
 import logging
 
-# At the top of the script
+import glob
+import os
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
+# Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
-handler = logging.FileHandler('app_errors.log')
-handler.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
+
+log_dir, log_file = 'logs', 'orders.log'  # Place your log files in a logs directory
+os.makedirs(log_dir, exist_ok=True)  # Ensure logs directory exists
+
+handler = TimedRotatingFileHandler(os.path.join(log_dir, log_file),
+                                   when="midnight",
+                                   interval=1,
+                                   encoding='utf-8')
+handler.suffix = "%Y%m%d"  # Save logs with date in file name
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
 logger.addHandler(handler)
 
 
@@ -120,7 +136,7 @@ class OrderManager:
             )
             return response.json()
 
-     def change_order_status(self, order_id, new_status):
+    def change_order_status(self, order_id, new_status):
         try:
             if self.use_local_files:
                 data = self.get_order_by_id(order_id)
