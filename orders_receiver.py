@@ -32,6 +32,9 @@ class OrderManager:
 
         self.root = tk.Tk()
         self.root.bind('<FocusIn>', self.onFocusIn)
+        self.root.bind('<FocusOut>', self.onFocusOut)
+        self.sound_playing = threading.Event()  # Indicator for whether sound is playing
+        self.window_in_focus = tk.BooleanVar()  # Indicator for whether window is in focus
 
         self.button_accept = tk.Button(self.root, text="Accept Order", command=lambda: self.accept_order(self.order_id))
         self.button_accept.pack()
@@ -81,13 +84,21 @@ class OrderManager:
         self.root.mainloop()
 
     def play_sound(self):
-        winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+        if not self.window_in_focus.get():  # Check if window is not in focus
+            winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
+            self.sound_playing.set()  # Indicate that sound is playing
 
     def stop_sound(self):
-        winsound.PlaySound(None, winsound.SND_ASYNC)
+        if self.sound_playing.is_set():  # Check if sound is playing
+            winsound.PlaySound(None, winsound.SND_ASYNC)
+            self.sound_playing.clear()  # Indicate that sound is not playing anymore
 
     def onFocusIn(self, event):
-        self.stop_sound()
+        self.window_in_focus.set(True)  # Indicate that window is now in focus
+        self.stop_sound()  # Stop sound if it's playing
+
+    def onFocusOut(self, event):
+        self.window_in_focus.set(False)  # Indicate that window lost focus
 
     def get_orders(self):
         if self.use_local_files:
@@ -190,7 +201,7 @@ class OrderManager:
         self.label_no_orders.config(text = text)
 
     def accept_order(self, order_id):
-        self.process_order(self.get_order_by_id(order_id))
+        self.change_order_status(order_id, 'completed')
         self.update_buttons(tk.DISABLED)
         print(f"Accepted order {order_id}.")
         self.update_ui_after_order_process("No orders currently")
@@ -242,9 +253,6 @@ class OrderManager:
         self.treeview.delete(*self.treeview.get_children())
 
 
-    def process_order(self, order):
-        self.populate_ui(order)
-        self.change_order_status(order['id'], 'completed')
 
 
 if __name__=="__main__":
