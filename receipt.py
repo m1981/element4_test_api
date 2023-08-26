@@ -52,12 +52,12 @@ class Order:
 
 
 class Printer:
-    def __init__(self, elzabdr, port, speed, timeout):
+    def __init__(self, elzabdr, port, speed, timeout, local):
         self.elzabdr = elzabdr
         self.port = port
         self.speed = speed
         self.timeout = timeout
-        self.local = False
+        self.local = local
 
     def print_receipt(self, order):
         if self.local:
@@ -101,10 +101,8 @@ class Printer:
                 # todo Zwieksz numer zamowienia
                 message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
                 self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('windows-1250'), 1)
-
-                self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('windows-1250'), 1)
-                # Max line length is 36 characters
                 self.elzabdr.pNonFiscalPrintoutLine(1, str(order.comments).encode('windows-1250'), 1)
+                self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('windows-1250'), 1)
                 self.elzabdr.pNonFiscalPrintoutLine(11, b"Telefon", 1)
                 # Print EAN code
                 self.elzabdr.pNonFiscalPrintoutLine(21, str(order.phone_number).encode('windows-1250'), 1);
@@ -119,16 +117,18 @@ class Printer:
         print('Store: Sklep internetowy')
         print('NIP: ', order.NIP)
         print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
+        print('\n')
         for item in order.items:
             print(item.name, item.vat_rate, 0, item.amount, 2,item.measurement_unit, item.price)
-        print('--- End of Receipt ---\n\n')
+        print('\n\n')
 
     def local_print_internal_order(self, order):
         print('--- Internal ---')
+        print('Zamowienie: ', order.order_id)
+        print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
+        print('\n')
         for item in order.items:
             print(item.name, item.amount/100)
-        print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
-        print('Zamowienie: ', order.order_id)
         print(order.na_miejscu_na_wynos)
         print('Komentarz: ', order.comments)
         print('Telefon: ', order.phone_number)

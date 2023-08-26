@@ -9,6 +9,7 @@ import threading
 import winsound
 import argparse
 import logging
+import yaml
 from datetime import date, datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from receipt import Order, ReceiptItem, Printer, elzabdr
@@ -38,12 +39,17 @@ handler_console.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
 logger.addHandler(handler_file)
 logger.addHandler(handler_console)
 
-
 class OrderManager:
-    def __init__(self, use_local_files=False, local_files_path='./'):
-        self.use_local_files = use_local_files
-        self.local_files_path = local_files_path
-        self.printer = Printer(elzabdr, port=1, speed=9600, timeout=5)
+    def __init__(self):
+        with open('config.yaml', 'r') as stream:
+            config = yaml.safe_load(stream)
+
+        self.use_local_files = config['use_local_files']
+        print(type(config['use_local_files']))
+        self.local_files_path = config['local_files_path']
+        self.printer = Printer(elzabdr, config['printer']['port'], config['printer']['speed'], config['printer'][
+        'timeout'], config['use_local_printer'])
+
         self.order_exists = False
         self.order_id = None
         self.client_key = "ck_5d652d5fca632c5e60cec2e0b4a9d2f8de2ce8ec"
@@ -201,11 +207,8 @@ class OrderManager:
         orders = []
         try:
             if self.use_local_files:
-                self.label_no_orders.config(text="TEST: Czytam zamównienia z pliku ...")
-                print('get_local')
                 orders = self.get_local_orders(self.local_files_path)
             else:
-                self.label_no_orders.config(text="Odbieram zamówienia...")
                 base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 response = requests.get(
                     f"{self.rest_api_url}/orders",
@@ -340,14 +343,12 @@ class OrderManager:
         self.print_receipt(self.get_order_by_id(order_id))
         self.change_order_status(order_id, 'completed')
         self.update_buttons(tk.DISABLED)
-        print(f"Accepted order {order_id}.")
-        self.update_ui_after_order_process("No orders currently")
+        logger.info(f"Accepted order {order_id}.")
 
     def reject_order(self, order_id):
         self.change_order_status(order_id, 'cancelled')
         self.update_buttons(tk.DISABLED)
-        print(f"Rejected order {order_id}.")
-        self.update_ui_after_order_process("No orders currently")
+        logger.info(f"Rejected order {order_id}.")
 
 
     def print_receipt(self, order):

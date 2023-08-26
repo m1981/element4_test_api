@@ -1,0 +1,7 @@
+use_local_files: true
+use_local_printer: true
+local_files_path: './'
+printer:
+  port: 1
+  speed: 9600
+  timeout: 5
