@@ -215,16 +215,16 @@ class OrderManager:
                 orders = response.json()
 
         except requests.RequestException as re:
-            logger.error(f"Error connecting with API: {str(re)}")
+            logger.exception(f"Error connecting with API: {str(re)}")
 
         except json.decoder.JSONDecodeError as json_err:
-            logger.error(f"JSON decoding error while fetching orders: {str(json_err)}")
+            logger.exception(f"JSON decoding error while fetching orders: {str(json_err)}")
 
         except IOError as ioerr:
-            logger.error(f"File operation error while fetching orders: {str(ioerr)}")
+            logger.exception(f"File operation error while fetching orders: {str(ioerr)}")
 
         except Exception as ex:
-            logger.error(f"An unexpected error occurred while fetching orders: {str(ex)}")
+            logger.exception(f"An unexpected error occurred while fetching orders: {str(ex)}")
 
         finally:
             logger.info(f"Fetched orders data: {orders}")
@@ -246,23 +246,23 @@ class OrderManager:
                 logger.info(f"Response: {r.json()}")  # Log the response from the server
 
         except requests.RequestException as re:
-            logger.error(f"Error connecting with API: {re}")
+            logger.exception(f"Error connecting with API: {re}")
             return None
 
         except PermissionError:
-            logger.error(f"Permission denied: Unable to write to {os.path.join(self.local_files_path, f'order_{order_id}.json')}")
+            logger.exception(f"Permission denied: Unable to write to {os.path.join(self.local_files_path, f'order_{order_id}.json')}")
             return None
 
         except IOError as e:
-            logger.error(f"File error occurred: {e}")
+            logger.exception(f"File error occurred: {e}")
             return None
 
         except KeyError as e:
-            logger.error(f"Order data is missing key: {e}")
+            logger.exception(f"Order data is missing key: {e}")
             return None
 
         except Exception as e:
-            logger.error(f"An unexpected error occurred: {str(e)}")
+            logger.exception(f"An unexpected error occurred: {str(e)}")
             return None
 
 
