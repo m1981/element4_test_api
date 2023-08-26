@@ -6,5 +6,7 @@ dist
 logsy
 *.spec
 logs
+dist.zip
+desktop.ini
 
 
