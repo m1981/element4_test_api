@@ -228,6 +228,7 @@ class OrderManager:
 
         finally:
             logger.info(f"Fetched orders data: {orders}")
+            orders.reverse()
             return orders
 
     def change_order_status(self, order_id, new_status):
