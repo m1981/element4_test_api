@@ -1,1 +1,1 @@
-python orders_receiver.py --status processing
+"C:\Program Files\Python311\python.exe" orders_receiver.py --status processing
