@@ -1,0 +1,82 @@
+{
+   "billing":{
+      "address_1":"",
+      "address_2":"",
+      "city":"",
+      "company":"",
+      "country":"",
+      "czy_chce_nip":"",
+      "email":"",
+      "first_name":"Adam",
+      "last_name":"",
+      "na_miejscu_na_wynos":"Na wynos",
+      "nip_do_paragonu":"9671084587",
+      "phone":"791630003",
+      "postcode":"",
+      "state":""
+   },
+   "date_created": "2023-08-23T08:30:00",
+   "dodatki_do_pizzy":{
+      "dodatki_do_pizzy_popup":"",
+      "dodatki_do_sniadan":"",
+      "info_zamowienia":"",
+      "notatki":"Bez bulki"
+   },
+   "fee_lines":[
+      
+   ],
+   "id":2430,
+   "is_editable":false,
+   "line_items":[
+      {
+         "id":455,
+         "image":{
+            "id":"",
+            "src":""
+         },
+         "meta_data":[
+            
+         ],
+         "name":"Hamburger completed",
+         "parent_name":null,
+         "price":12.962963,
+         "product_id":2120,
+         "quantity":1,
+         "sku":"",
+         "subtotal":"12.96",
+         "subtotal_tax":"1.04",
+         "tax_class":"",
+         "taxes":[
+            {
+               "id":1,
+               "subtotal":"1.037037",
+               "total":"1.037037"
+            }
+         ],
+         "total":"12.96",
+         "total_tax":"1.04",
+         "variation_id":0
+      }
+   ],
+   "needs_payment":false,
+   "needs_processing":true,
+   "number":"2430",
+   "order_key":"wc_order_Zh2mi91rK4O4V",
+   "parent_id":0,
+   "payment_method":"payublik",
+   "payment_method_title":"Blik",
+   "prices_include_tax":true,
+   "refunds":[
+      
+   ],
+   "shipping_lines":[
+      
+   ],
+   "shipping_tax":"0.00",
+   "shipping_total":"0.00",
+   "status":"completed",
+   "total":"14.00",
+   "total_tax":"1.04",
+   "transaction_id":"WGG91PT93N230822GUEST000P01",
+   "version":"8.0.2"
+}
