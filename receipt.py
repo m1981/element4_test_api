@@ -118,16 +118,18 @@ class Printer:
         print('--- Receipt ---')
         print('Store: Sklep internetowy')
         print('NIP: ', order.NIP)
+        print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
         for item in order.items:
             print(item.name, item.vat_rate, 0, item.amount, 2,item.measurement_unit, item.price)
-        print('--- End of Receipt ---')
+        print('--- End of Receipt ---\n\n')
 
     def local_print_internal_order(self, order):
-        print('--- Receipt ---')
+        print('--- Internal ---')
         for item in order.items:
             print(item.name, item.amount/100)
-        print('Order ID: ', order.order_id)
+        print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
+        print('Zamowienie: ', order.order_id)
         print(order.na_miejscu_na_wynos)
-        print('Comment: ', order.comments)
-        print('Phone Number: ', order.phone_number)
+        print('Komentarz: ', order.comments)
+        print('Telefon: ', order.phone_number)
         print('--- End of Receipt ---')

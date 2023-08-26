@@ -4,10 +4,12 @@ import base64
 import requests
 import tkinter as tk
 from tkinter import ttk
+import tkinter.font as font
 import threading
 import winsound
 import argparse
 import logging
+from datetime import date, datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from receipt import Order, ReceiptItem, Printer, elzabdr
 
@@ -18,16 +20,23 @@ logger.setLevel(logging.INFO)
 log_dir, log_file = 'logs', 'orders.log'  # Place your log files in a logs directory
 os.makedirs(log_dir, exist_ok=True)  # Ensure logs directory exists
 
-handler = TimedRotatingFileHandler(os.path.join(log_dir, log_file),
+handler_file = TimedRotatingFileHandler(os.path.join(log_dir, log_file),
                                    when="midnight",
                                    interval=1,
                                    encoding='utf-8')
-handler.suffix = "%Y%m%d"  # Save logs with date in file name
+handler_file.suffix = "%Y%m%d"  # Save logs with date in file name
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
+# Handler for writing logs to the console
+handler_console = logging.StreamHandler()
+handler_console.setLevel(logging.WARNING)
 
-logger.addHandler(handler)
+# Formatter specifies the layout of logs
+handler_file.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+handler_console.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+
+# Add both handlers to the logger
+logger.addHandler(handler_file)
+logger.addHandler(handler_console)
 
 
 class OrderManager:
@@ -50,69 +59,98 @@ class OrderManager:
         self.process_status = None
 
         self.root = tk.Tk()
+
+        # Set the initial size of the window
+        width = 800  # Desired width
+        height = 700  # Desired height
+
+        # Get screen width and height
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # Calculate the correct position to center the window
+        position_top = int(screen_height / 2 - height / 2)
+        position_right = int(screen_width / 2 - width / 2)
+
+        self.root.geometry(f'{width}x{height}+{position_right}+{position_top}')
+
         self.root.bind('<FocusIn>', self.onFocusIn)
         self.root.bind('<FocusOut>', self.onFocusOut)
         self.sound_playing = threading.Event()  # Indicator for whether sound is playing
         self.window_in_focus = tk.BooleanVar()  # Indicator for whether window is in focus
 
+        self.label_font = font = ("Verdana", 12)
+        self.default_font = font = ("Verdana", 14)
         # Create a frame for the labels.
         frame_labels = tk.Frame(self.root)
         frame_labels.pack(fill='x')
 
-        order_label = tk.Label(frame_labels, text="Zamowienie ID", anchor='e')
+        order_label = tk.Label(frame_labels, text="Zamowienie:", font = self.label_font, anchor='e')
         order_label.grid(row=0, column=0, sticky='e')
-        self.label_order = tk.Label(frame_labels, text="1234", anchor='w')
+        self.label_order = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_order.grid(row=0, column=1, sticky='w')
 
-        nip_label = tk.Label(frame_labels, text="NIP:", anchor='e')
+        date_label = tk.Label(frame_labels, text="Data:", font = self.label_font, anchor='e')
+        date_label.grid(row=0, column=2, sticky='e')
+        self.label_date = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
+        self.label_date.grid(row=0, column=3, sticky='w')
+
+        nip_label = tk.Label(frame_labels, text="NIP:", font = self.label_font, anchor='e')
         nip_label.grid(row=1, column=0, sticky='e')
-        self.label_nip = tk.Label(frame_labels, text="", anchor='w')
+        self.label_nip = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_nip.grid(row=1, column=1, sticky='w')
 
-        phone_label = tk.Label(frame_labels, text="Tel:", anchor='e')
+        phone_label = tk.Label(frame_labels, text="Tel:", font = self.label_font, anchor='e')
         phone_label.grid(row=2, column=0, sticky='e')
-        self.label_phone = tk.Label(frame_labels, text="", anchor='w')
+        self.label_phone = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_phone.grid(row=2, column=1, sticky='w')
 
-        nmnw_label = tk.Label(frame_labels, text="Gdzie:", anchor='e')
-        nmnw_label.grid(row=3, column=0, sticky='e')
-        self.label_na_miejscu_na_wynos = tk.Label(frame_labels, text="", anchor='w')
-        self.label_na_miejscu_na_wynos.grid(row=3, column=1, sticky='w')
+        nmnw_label = tk.Label(frame_labels, text="Gdzie:", font = self.label_font, anchor='e')
+        nmnw_label.grid(row=3, column=0, sticky='e', pady=(50, 0))
+        self.label_na_miejscu_na_wynos = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
+        self.label_na_miejscu_na_wynos.grid(row=3, column=1, sticky='w', pady=(50, 0))
 
-        comments_label = tk.Label(frame_labels, text="Komentarz:", anchor='e')
+        comments_label = tk.Label(frame_labels, text="Komentarz:", font = self.label_font, anchor='e')
         comments_label.grid(row=4, column=0, sticky='e')
-        self.label_comments = tk.Label(frame_labels, text="", anchor='w')
+        self.label_comments = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_comments.grid(row=4, column=1, sticky='w')
 
-        self.label_no_orders = tk.Label(self.root, text="", font = ("Helvetica", 18), fg = "green")
+        self.label_no_orders = tk.Label(self.root, text="Uruchamianie...", font = ("Verdana", 18), fg = "green")
         self.label_no_orders.pack()
 
         # Create a frame for the buttons.
         frame_buttons = tk.Frame(self.root)
         frame_buttons.pack(pady=10)
 
-        self.button_accept = tk.Button(frame_buttons, text="Akceptuj",
-                                       command=lambda: self.accept_order(self.order_id))
+        self.button_accept = tk.Button(frame_buttons, text="Akceptuj", font = self.default_font, width = 10, height = 2,
+                                       command=lambda: self.accept_order(self.order_id),  fg='#FFFFFF', bg='#36b37e')
         self.button_accept.pack(side='left', padx=5)
 
-        self.button_reject = tk.Button(frame_buttons, text="Odrzuć",
-                                       command=lambda: self.reject_order(self.order_id))
+        self.button_reject = tk.Button(frame_buttons, text="Odrzuć", font = self.default_font, width = 10, height = 2,
+                                       command=lambda: self.reject_order(self.order_id),  fg='#FFFFFF', bg='#cc3931')
         self.button_reject.pack(side='left', padx=5)
 
         # Create a frame for the Treeview.
         frame_treeview = tk.Frame(self.root)
         frame_treeview.pack(fill='both', expand=True)
 
-        self.treeview = ttk.Treeview(frame_treeview)
+        style = ttk.Style()
+        style.configure("mystyle.Treeview", highlightthickness=0, bd=0, font=('Verdana', 14)) # Modify the font of the body
+        style.configure("mystyle.Treeview.Heading", font=('Verdana', 14,'bold')) # Modify the font of the headings
+        style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})]) # Remove the borders
+
+        self.treeview = ttk.Treeview(frame_treeview, style="mystyle.Treeview")
+
+
         self.treeview.pack(fill='both', expand=True)
         self.treeview["columns"]=("1","2","3")
         self.treeview['show'] = 'headings'
-        self.treeview.column("1", width=150)
-        self.treeview.column("2", width=100)
-        self.treeview.column("3", width=150)
-        self.treeview.heading("1", text="Danie")
-        self.treeview.heading("2", text="Ilość")
-        self.treeview.heading("3", text="Cena")
+        self.treeview.column("1", width=350)
+        self.treeview.column("2", width=50)
+        self.treeview.column("3", width=100)
+        self.treeview.heading("1", text="Danie", anchor="w")
+        self.treeview.heading("2", text="Ilość", anchor="w")
+        self.treeview.heading("3", text="Cena", anchor="w")
 
         self.root.after(5000, self.update_order)
 
@@ -126,6 +164,21 @@ class OrderManager:
 
     def run(self):
         self.root.mainloop()
+
+
+    def convert_date(self, order_date):
+        today = datetime.now()
+        if order_date.date() == today.date():
+            relative_date = "(dzisiaj)"
+        elif order_date.date() == today.date() - timedelta(days=1):
+            relative_date = "(wczoraj)"
+        else:
+            diff = today.date() - order_date.date()
+            relative_date = f"({diff.days} dni temu)"
+
+        formatted_date = order_date.strftime("%d.%m  godzina: %H:%M")
+        return f"{relative_date} {formatted_date}"
+
 
     def play_sound(self):
         if not self.window_in_focus.get():  # Check if window is not in focus
@@ -148,8 +201,11 @@ class OrderManager:
         orders = []
         try:
             if self.use_local_files:
+                self.label_no_orders.config(text="TEST: Czytam zamównienia z pliku ...")
+                print('get_local')
                 orders = self.get_local_orders(self.local_files_path)
             else:
+                self.label_no_orders.config(text="Odbieram zamówienia...")
                 base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 response = requests.get(
                     f"{self.rest_api_url}/orders",
@@ -177,12 +233,7 @@ class OrderManager:
     def change_order_status(self, order_id, new_status):
         try:
             if self.use_local_files:
-                data = self.get_order_by_id(order_id)
-                logger.info(f"Order data: {data}")  # Log the order data
-                data['status'] = new_status
-                with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), 'w') as f:
-                    f.write(json.dumps(data))
-
+                os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
             else:
                 base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 data = {"status": new_status}
@@ -215,7 +266,6 @@ class OrderManager:
             return None
 
 
-
     def get_order_by_id(self, order_id):
         if self.use_local_files:
             with open(os.path.join(self.local_files_path, f'order_{order_id}.json')) as f:
@@ -228,21 +278,10 @@ class OrderManager:
             )
             return response.json()
 
-    def reset_orders(self):
-        '''Reset the status field of all orders to 'processing' in local JSON files.'''
-        if self.use_local_files:
-            for filename in os.listdir(self.local_files_path):
-                if filename.endswith(".json"):
-                    with open(os.path.join(self.local_files_path, filename)) as f:
-                        data = json.load(f)
-                        data['status'] = 'processing'
-                    with open(os.path.join(self.local_files_path, filename), 'w') as f:
-                        f.write(json.dumps(data))
-
-
     def get_local_orders(self, path):
         orders = []
-        for filename in os.listdir(path):
+        files = os.listdir(path)
+        for filename in files:
             if filename.endswith(".json"):
                 with open(os.path.join(path, filename)) as f:
                     orders.append(json.load(f))
@@ -273,7 +312,7 @@ class OrderManager:
             else:
                 self.order_not_processing_effects()
         except Exception as e:
-            logger.error(f"An error occurred in the order update process: {str(e)}")
+            logger.exception(f"An error occurred update_order: {str(e)}")
         finally:
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
 
@@ -285,7 +324,7 @@ class OrderManager:
         self.cleanup_ui()
 
         # Display message
-        self.label_no_orders.config(text="Oczekuje na zamówienia...")
+        self.label_no_orders.config(text="Brak nowych zamówień.")
         self.update_buttons(tk.DISABLED)
 
     def update_buttons(self, state):
@@ -315,6 +354,7 @@ class OrderManager:
         vat_id = 2
         receipt_order.NIP = order['billing']['nip_do_paragonu']
         receipt_order.order_id = order['id']
+        receipt_order.date_created = datetime.strptime(order['date_created'], "%Y-%m-%dT%H:%M:%S")
         receipt_order.phone_number = order['billing']['phone']
         receipt_order.na_miejscu_na_wynos = order['billing']['na_miejscu_na_wynos']
         receipt_order.comments = order['dodatki_do_pizzy']['notatki']
@@ -331,6 +371,7 @@ class OrderManager:
             self.label_no_orders.config(text="")
             self.order_id = order['id']
             self.label_order.config(text = f"{self.order_id}")
+            self.label_date.config(text = self.convert_date(datetime.strptime(order['date_created'][:-1], "%Y-%m-%dT%H:%M:%S")))
             self.label_nip.config(text = f"{order['billing']['nip_do_paragonu']}")
             self.label_phone.config(text = f"{order['billing']['phone']}")
             self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
@@ -346,6 +387,7 @@ class OrderManager:
         # Clear all Labels
         self.label_no_orders.config(text="")
         self.label_order.config(text="")
+        self.label_date.config(text = "")
         self.label_nip.config(text="")
         self.label_phone.config(text="")
         self.label_na_miejscu_na_wynos.config(text="")
