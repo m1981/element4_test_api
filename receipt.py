@@ -117,16 +117,14 @@ class Printer:
         print('Store: Sklep internetowy')
         print('NIP: ', order.NIP)
         print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
-        print('\n')
         for item in order.items:
             print(item.name, item.vat_rate, 0, item.amount, 2,item.measurement_unit, item.price)
-        print('\n\n')
+        print('\n')
 
     def local_print_internal_order(self, order):
         print('--- Internal ---')
         print('Zamowienie: ', order.order_id)
         print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
-        print('\n')
         for item in order.items:
             print(item.name, item.amount/100)
         print(order.na_miejscu_na_wynos)

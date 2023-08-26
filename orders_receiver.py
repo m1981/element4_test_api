@@ -5,6 +5,8 @@ import requests
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as font
+from tkinter import messagebox
+import traceback
 import threading
 import winsound
 import argparse
@@ -44,11 +46,11 @@ class OrderManager:
         with open('config.yaml', 'r') as stream:
             config = yaml.safe_load(stream)
 
-        self.use_local_files = config['use_local_files']
-        print(type(config['use_local_files']))
         self.local_files_path = config['local_files_path']
+        self.use_local_files = config['use_local_files']
+        self.use_local_printer = config['use_local_printer']
         self.printer = Printer(elzabdr, config['printer']['port'], config['printer']['speed'], config['printer'][
-        'timeout'], config['use_local_printer'])
+        'timeout'], self.use_local_printer)
 
         self.order_exists = False
         self.order_id = None
@@ -100,6 +102,13 @@ class OrderManager:
         date_label.grid(row=0, column=2, sticky='e')
         self.label_date = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_date.grid(row=0, column=3, sticky='w')
+
+        self.local_orders_label = tk.Label(frame_labels, text="", fg='red', font=self.label_font, anchor='e')
+        self.local_orders_label.grid(row=1, column=3, sticky='e')
+
+        self.console_printer_label = tk.Label(frame_labels, text="", fg='red', font=self.label_font, anchor='e')
+        self.console_printer_label.grid(row=2, column=3, sticky='e')
+
 
         nip_label = tk.Label(frame_labels, text="NIP:", font = self.label_font, anchor='e')
         nip_label.grid(row=1, column=0, sticky='e')
@@ -285,6 +294,7 @@ class OrderManager:
     def get_local_orders(self, path):
         orders = []
         files = os.listdir(path)
+        files.sort(reverse=True)  # This will sort the files in descending order
         for filename in files:
             if filename.endswith(".json"):
                 with open(os.path.join(path, filename)) as f:
@@ -315,29 +325,22 @@ class OrderManager:
                     break
             else:
                 self.order_not_processing_effects()
-        except Exception as e:
-            logger.exception(f"An error occurred update_order: {str(e)}")
-        finally:
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
+        except Exception as e:
+            exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
+            messagebox.showerror("Error", exception_message)
+
 
     def show_order(self, order):
         self.populate_ui(order)
 
     def show_no_order(self):
-        # Cleanup UI
         self.cleanup_ui()
-
-        # Display message
         self.label_no_orders.config(text="Brak nowych zamówień.")
-        self.update_buttons(tk.DISABLED)
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
         self.button_reject.config(state=state)
-
-    def update_ui_after_order_process(self, text):
-        self.cleanup_ui()
-        self.label_no_orders.config(text = text)
 
     def accept_order(self, order_id):
         self.print_receipt(self.get_order_by_id(order_id))
@@ -379,6 +382,17 @@ class OrderManager:
             self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
             self.label_comments.config(text = f"{order['dodatki_do_pizzy']['notatki']}")
             self.treeview.delete(*self.treeview.get_children())
+
+            if self.local_files_path:
+                self.local_orders_label.config(text="Testing: Local orders")
+            else:
+                self.local_orders_label.config(text="")
+
+            if self.use_local_printer:
+                self.console_printer_label.config(text="Testing: Console printer")
+            else:
+                self.console_printer_label.config(text="")
+
             for item in order['line_items']:
                 self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
         except Exception as e:
