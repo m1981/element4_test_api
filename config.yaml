@@ -1,5 +1,5 @@
-use_local_files: true
-use_local_printer: true
+use_local_files: false    # true - zamówienia brane są z plików a nie z Woo Commerce
+use_local_printer: false  # true - drukuj paragony na ekranie zamiast na drukarce
 local_files_path: './'
 printer:
   port: 1
