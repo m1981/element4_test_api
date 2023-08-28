@@ -5,14 +5,14 @@
       "last_name":"",
       "na_miejscu_na_wynos":"Na miejscu",
       "nip_do_paragonu":"9671084587",
-      "phone":"791630003",
+      "phone":"791630003"
    },
    "date_created": "2023-08-23T08:20:00",
    "dodatki_do_pizzy":{
       "dodatki_do_pizzy_popup":"",
       "dodatki_do_sniadan":"",
       "info_zamowienia":"",
-      "notatki":"Bez bulki"
+      "notatki":"Halumi zamiast mięsa"
    },
       
    "id":2420,
@@ -37,7 +37,7 @@
             }
          ],
          "total":"12.96",
-         "total_tax":"1.04",
+         "total_tax":"1.04"
       }
    ],
    "needs_payment":false,
@@ -48,5 +48,5 @@
       
    "status":"processing",
    "total":"14.00",
-   "total_tax":"1.04",
+   "total_tax":"1.04"
 }
