@@ -307,12 +307,22 @@ class OrderManager:
 
     def order_processing_effects(self, order):
         self.show_order(order)
-        self.play_sound()
+        if self.root.state() == 'iconic':
+            self.play_sound()
+        else:
+            self.stop_sound()
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
         self.show_no_order()
+        self.stop_sound()
         self.update_buttons(state=tk.DISABLED)
+
+    def force_deiconify_and_bring_to_front(self):
+        if self.root.state() == 'iconic':  # Check if the window is minimized
+            self.root.deiconify()  # If so, restore it
+        self.root.attributes('-topmost', 1)  # brings the window to top
+        #self.root.after_idle(self.root.attributes, '-topmost', 0)  # makes sure it is not permanently on top
 
     def update_order(self):
         try:
@@ -332,11 +342,14 @@ class OrderManager:
 
 
     def show_order(self, order):
+        self.force_deiconify_and_bring_to_front()
         self.populate_ui(order)
+        self.label_no_orders.config(text="")
 
     def show_no_order(self):
         self.cleanup_ui()
         self.label_no_orders.config(text="Brak nowych zamówień.")
+
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
@@ -369,11 +382,8 @@ class OrderManager:
         self.printer.print_receipt(receipt_order)
         self.printer.print_internal_order(receipt_order)
 
-
     def populate_ui(self, order):
         try:
-            self.root.attributes('-topmost', True)
-            self.label_no_orders.config(text="")
             self.order_id = order['id']
             self.label_order.config(text = f"{self.order_id}")
             self.label_date.config(text = self.convert_date(datetime.strptime(order['date_created'][:-1], "%Y-%m-%dT%H:%M:%S")))
