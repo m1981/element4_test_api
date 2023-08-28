@@ -65,7 +65,7 @@ class OrderManager:
         self.label_comments = None
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
-
+        self.has_orders = False
         self.root = tk.Tk()
 
         # Set the initial size of the window
@@ -196,7 +196,7 @@ class OrderManager:
 
 
     def play_sound(self):
-        if not self.window_in_focus.get():  # Check if window is not in focus
+        if self.root.state() == 'iconic':  # Check if window is minimized
             winsound.PlaySound('C:/Windows/Media/tada.wav', winsound.SND_ASYNC | winsound.SND_LOOP)
             self.sound_playing.set()  # Indicate that sound is playing
 
@@ -211,6 +211,8 @@ class OrderManager:
 
     def onFocusOut(self, event):
         self.window_in_focus.set(False)  # Indicate that window lost focus
+        if self.has_orders:
+            self.play_sound()
 
     def get_orders(self):
         orders = []
@@ -308,41 +310,48 @@ class OrderManager:
     def order_processing_effects(self, order):
         self.show_order(order)
         if self.root.state() == 'iconic':
-            self.play_sound()
-        else:
-            self.stop_sound()
+            self.root.deiconify()
+        self.stop_sound()
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
         self.show_no_order()
         self.stop_sound()
         self.update_buttons(state=tk.DISABLED)
+        self.root.attributes('-topmost', 0) # removes topmost state
 
     def force_deiconify_and_bring_to_front(self):
         if self.root.state() == 'iconic':  # Check if the window is minimized
             self.root.deiconify()  # If so, restore it
-        self.root.attributes('-topmost', 1)  # brings the window to top
+        self.root.attributes('-topmost', True)  # brings the window to top
         #self.root.after_idle(self.root.attributes, '-topmost', 0)  # makes sure it is not permanently on top
 
     def update_order(self):
         try:
             orders = self.get_orders()
-            for order in orders:
-                logger.info(f"Single Order data: {order}")
-                if self.is_processing(order):
-                    self.order_id = order["id"]
-                    self.order_processing_effects(order)
-                    break
-            else:
-                self.order_not_processing_effects()
+            self.process_orders(orders)
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
             exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
             messagebox.showerror("Error", exception_message)
 
 
+    def process_orders(self, orders):
+        has_orders_now = False
+        for order in orders:
+            if self.is_processing(order):  # An order is in processing state
+                self.order_id = order["id"]
+                has_orders_now = True
+
+        if not self.has_orders and has_orders_now:
+            self.order_processing_effects(order)
+        elif self.has_orders and not has_orders_now:
+            self.order_not_processing_effects()
+
+        self.has_orders = has_orders_now
+
     def show_order(self, order):
-        self.force_deiconify_and_bring_to_front()
+        self.force_deiconify_and_bring_to_front()  # Add this line
         self.populate_ui(order)
         self.label_no_orders.config(text="")
 
