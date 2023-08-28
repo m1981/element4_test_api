@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import winsound
-
 import requests
-
 import os
+import sys
 import json
 import base64
+import bleach
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -230,61 +232,34 @@ class OrderManager:
                     f"{self.rest_api_url}/orders",
                     headers={"Authorization": f"Basic {base64_encoded_data}"}
                 )
+                response.encoding = 'utf-8'
                 response.raise_for_status() # Raise exception if status code indicates an HTTP error
-                orders = response.json()
+                orders = [bleach.clean(order) for order in response.json()]
 
-        except requests.RequestException as re:
-            logger.exception(f"Error connecting with API: {str(re)}")
-
-        except json.decoder.JSONDecodeError as json_err:
-            logger.exception(f"JSON decoding error while fetching orders: {str(json_err)}")
-
-        except IOError as ioerr:
-            logger.exception(f"File operation error while fetching orders: {str(ioerr)}")
-
-        except Exception as ex:
-            logger.exception(f"An unexpected error occurred while fetching orders: {str(ex)}")
-
-        finally:
-            logger.info(f"Fetched orders data: {orders}")
+        except Exception as e:
+            self.handle_exception(e)
 
         orders.reverse()
         return orders
 
     def change_order_status(self, order_id, new_status):
-        try:
-            if self.use_local_files:
-                os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
-            else:
-                base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-                data = {"status": new_status}
-                r = requests.put(
-                    f"{self.rest_api_url}/orders/{order_id}",
-                    headers={"Authorization": f"Basic {base64_encoded_data}"},
-                    json=data
-                )
-                r.raise_for_status()
-                logger.info(f"Response: {r.json()}")  # Log the response from the server
-
-        except requests.RequestException as re:
-            logger.exception(f"Error connecting with API: {re}")
-
-        except PermissionError:
-            logger.exception(f"Permission denied: Unable to write to {os.path.join(self.local_files_path, f'order_{order_id}.json')}")
-
-        except IOError as e:
-            logger.exception(f"File error occurred: {e}")
-
-        except KeyError as e:
-            logger.exception(f"Order data is missing key: {e}")
-
-        except Exception as e:
-            logger.exception(f"An unexpected error occurred: {str(e)}")
+        if self.use_local_files:
+            os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
+        else:
+            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+            data = {"status": new_status}
+            r = requests.put(
+                f"{self.rest_api_url}/orders/{order_id}",
+                headers={"Authorization": f"Basic {base64_encoded_data}"},
+                json=data
+            )
+            r.raise_for_status()
+            logger.info(f"Response: {r.json()}")  # Log the response from the server
 
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
-            with open(os.path.join(self.local_files_path, f'order_{order_id}.json')) as f:
+            with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), encoding='utf-8') as f:
                 return json.load(f)
         else:
             base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
@@ -300,7 +275,7 @@ class OrderManager:
         files.sort(reverse=True)  # This will sort the files in descending order
         for filename in files:
             if filename.endswith(".json"):
-                with open(os.path.join(path, filename)) as f:
+                with open(os.path.join(path, filename), encoding='utf-8') as f:
                     orders.append(json.load(f))
         return orders
 
@@ -337,8 +312,7 @@ class OrderManager:
             logger.info("before self.root.after")
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
-            exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
-            messagebox.showerror("Error", exception_message)
+            self.handle_exception(e)
         logger.info("end of update_order")
 
 
@@ -383,30 +357,35 @@ class OrderManager:
         self.button_reject.config(state=state)
 
     def accept_order(self, order_id):
-      logger.info("accept_order ID: {order_id}")
-      self.update_buttons(state=tk.DISABLED)
-      self.print_receipt(self.get_order_by_id(order_id))
-      self.change_order_status(order_id, 'completed')
-      self.stop_sound()
-      self.update_order() # Manually update orders immediately after accepting an order
-      if self._update_id is not None:
-          self.root.after_cancel(self._update_id)
-      self._update_id = self.root.after(5000, self.update_order)
-      self.has_orders = False # Reset the flag after accepting the order
-      logger.info(f"Accepted order {order_id}.")
+        try:
+          logger.info("accept_order ID: {order_id}")
+          self.update_buttons(state=tk.DISABLED)
+          self.print_receipt(self.get_order_by_id(order_id))
+          self.change_order_status(order_id, 'completed')
+          self.stop_sound()
+          self.update_order() # Manually update orders immediately after accepting an order
+          if self._update_id is not None:
+              self.root.after_cancel(self._update_id)
+          self._update_id = self.root.after(5000, self.update_order)
+          self.has_orders = False # Reset the flag after accepting the order
+          logger.info(f"Accepted order {order_id}.")
+        except Exception as e:
+            self.handle_exception(e)
 
     def reject_order(self, order_id):
-      logger.info("reject_order")
-      self.update_buttons(state=tk.DISABLED)
-      self.change_order_status(order_id, 'cancelled')
-      self.stop_sound()
-      self.update_order()  # Manually update orders immediately after rejecting an order
-      if self._update_id is not None:
-          self.root.after_cancel(self._update_id)
-      self._update_id = self.root.after(5000, self.update_order)
-      self.has_orders = False # Reset the flag after rejecting the order
-      logger.info(f"Rejected order {order_id}.")
-
+        try:
+          logger.info("reject_order")
+          self.update_buttons(state=tk.DISABLED)
+          self.change_order_status(order_id, 'cancelled')
+          self.stop_sound()
+          self.update_order()  # Manually update orders immediately after rejecting an order
+          if self._update_id is not None:
+              self.root.after_cancel(self._update_id)
+          self._update_id = self.root.after(5000, self.update_order)
+          self.has_orders = False # Reset the flag after rejecting the order
+          logger.info(f"Rejected order {order_id}.")
+        except Exception as e:
+            self.handle_exception(e)
 
     def print_receipt(self, order):
         receipt_order = Order()
@@ -448,7 +427,7 @@ class OrderManager:
             for item in order['line_items']:
                 self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
         except Exception as e:
-            raise e
+            self.handle_exception(e)
 
 
     def cleanup_ui(self):
@@ -463,6 +442,17 @@ class OrderManager:
         # Clear Treeview
         self.treeview.delete(*self.treeview.get_children())
 
+
+    def handle_exception(self, e, error_message="An unexpected error occurred"):
+        # Log the exception
+        logger.exception(f"{error_message}: {str(e)}")
+
+        # Format the exception message for display
+        exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
+
+        # Show the exception message in a message box
+        messagebox.showerror("Error", exception_message)
+        sys.exit(1)
 
 if __name__=="__main__":
   manager = OrderManager()
