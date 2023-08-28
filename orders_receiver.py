@@ -1,6 +1,7 @@
 import os
 import json
 import base64
+import time
 import requests
 import tkinter as tk
 from tkinter import ttk
@@ -31,11 +32,11 @@ handler_file.suffix = "%Y%m%d"  # Save logs with date in file name
 
 # Handler for writing logs to the console
 handler_console = logging.StreamHandler()
-handler_console.setLevel(logging.WARNING)
+handler_console.setLevel(logging.INFO)
 
 # Formatter specifies the layout of logs
 handler_file.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-handler_console.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+handler_console.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
 
 # Add both handlers to the logger
 logger.addHandler(handler_file)
@@ -66,6 +67,7 @@ class OrderManager:
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
         self.has_orders = False
+        self._update_id = None
         self.root = tk.Tk()
 
         # Set the initial size of the window
@@ -216,69 +218,20 @@ class OrderManager:
 
     def get_orders(self):
         orders = []
-        try:
-            if self.use_local_files:
-                orders = self.get_local_orders(self.local_files_path)
-            else:
-                base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-                response = requests.get(
-                    f"{self.rest_api_url}/orders",
-                    headers={"Authorization": f"Basic {base64_encoded_data}"}
-                )
-                response.raise_for_status() # Raise exception if status code indicates an HTTP error
-                orders = response.json()
+        if self.use_local_files:
+            orders = self.get_local_orders(self.local_files_path)
+        else:
+            pass
 
-        except requests.RequestException as re:
-            logger.exception(f"Error connecting with API: {str(re)}")
-
-        except json.decoder.JSONDecodeError as json_err:
-            logger.exception(f"JSON decoding error while fetching orders: {str(json_err)}")
-
-        except IOError as ioerr:
-            logger.exception(f"File operation error while fetching orders: {str(ioerr)}")
-
-        except Exception as ex:
-            logger.exception(f"An unexpected error occurred while fetching orders: {str(ex)}")
-
-        finally:
-            logger.info(f"Fetched orders data: {orders}")
-            orders.reverse()
-            return orders
+        orders.reverse()
+        return orders
 
     def change_order_status(self, order_id, new_status):
-        try:
-            if self.use_local_files:
-                os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
-            else:
-                base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-                data = {"status": new_status}
-                r = requests.put(
-                    f"{self.rest_api_url}/orders/{order_id}",
-                    headers={"Authorization": f"Basic {base64_encoded_data}"},
-                    json=data
-                )
-                r.raise_for_status()
-                logger.info(f"Response: {r.json()}")  # Log the response from the server
-
-        except requests.RequestException as re:
-            logger.exception(f"Error connecting with API: {re}")
-            return None
-
-        except PermissionError:
-            logger.exception(f"Permission denied: Unable to write to {os.path.join(self.local_files_path, f'order_{order_id}.json')}")
-            return None
-
-        except IOError as e:
-            logger.exception(f"File error occurred: {e}")
-            return None
-
-        except KeyError as e:
-            logger.exception(f"Order data is missing key: {e}")
-            return None
-
-        except Exception as e:
-            logger.exception(f"An unexpected error occurred: {str(e)}")
-            return None
+        if self.use_local_files:
+            os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
+        else:
+            pass
+            # not using this for now
 
 
     def get_order_by_id(self, order_id):
@@ -286,17 +239,11 @@ class OrderManager:
             with open(os.path.join(self.local_files_path, f'order_{order_id}.json')) as f:
                 return json.load(f)
         else:
-            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-            response = requests.get(
-                f"{self.rest_api_url}/orders/{order_id}",
-                headers={"Authorization": f"Basic {base64_encoded_data}"}
-            )
-            return response.json()
+            pass
 
     def get_local_orders(self, path):
         orders = []
         files = os.listdir(path)
-        files.sort(reverse=True)  # This will sort the files in descending order
         for filename in files:
             if filename.endswith(".json"):
                 with open(os.path.join(path, filename)) as f:
@@ -304,8 +251,8 @@ class OrderManager:
         return orders
 
     def is_processing(self, order):
-        assert self.process_status
-        return order["status"] == self.process_status
+      logger.info(f"Order ID: {order['id']} status:  {order['status']}, Process status: {self.process_status}")
+      return order["status"] == self.process_status
 
     def order_processing_effects(self, order):
         self.show_order(order)
@@ -327,35 +274,46 @@ class OrderManager:
         #self.root.after_idle(self.root.attributes, '-topmost', 0)  # makes sure it is not permanently on top
 
     def update_order(self):
+        logger.info("update_order")
         try:
+            logger.info("before get_orders")
             orders = self.get_orders()
+            logger.info("before process_orders")
             self.process_orders(orders)
+            logger.info("before self.root.after")
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
             exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
             messagebox.showerror("Error", exception_message)
+        logger.info("end of update_order")
 
 
     def process_orders(self, orders):
+        logger.info("process_orders {}".format(len(orders)))
         has_orders_now = False
         for order in orders:
+            logger.info(f"order {order['id']}")
             if self.is_processing(order):  # An order is in processing state
                 self.order_id = order["id"]
                 has_orders_now = True
-
+        logger.info("after for loop")
         if not self.has_orders and has_orders_now:
             self.order_processing_effects(order)
         elif self.has_orders and not has_orders_now:
             self.order_not_processing_effects()
+        else:
+            logger.info("else in process_orders")
 
         self.has_orders = has_orders_now
 
     def show_order(self, order):
+        logger.info(f"show_order {order['id']}")
         self.force_deiconify_and_bring_to_front()  # Add this line
         self.populate_ui(order)
         self.label_no_orders.config(text="")
 
     def show_no_order(self):
+        logger.info("show_no_order")
         self.cleanup_ui()
         self.label_no_orders.config(text="Brak nowych zamówień.")
 
@@ -365,16 +323,29 @@ class OrderManager:
         self.button_reject.config(state=state)
 
     def accept_order(self, order_id):
+        logger.info("accept_order ID: {order_id}")
         self.print_receipt(self.get_order_by_id(order_id))
         self.change_order_status(order_id, 'completed')
-        self.update_buttons(tk.DISABLED)
+        time.sleep(1)
+        self.stop_sound()
+        self.update_order() # Manually update orders immediately after accepting an order
+        self.update_buttons(state=tk.DISABLED)
+        if self._update_id is not None:
+            self.root.after_cancel(self._update_id)
+        self._update_id = self.root.after(5000, self.update_order)
         logger.info(f"Accepted order {order_id}.")
 
     def reject_order(self, order_id):
+        logger.info("reject_order")
         self.change_order_status(order_id, 'cancelled')
-        self.update_buttons(tk.DISABLED)
+        time.sleep(1)
+        self.stop_sound()
+        self.update_order()  # Manually update orders immediately after rejecting an order
+        self.update_buttons(state=tk.DISABLED)
+        if self._update_id is not None:
+            self.root.after_cancel(self._update_id)
+        self._update_id = self.root.after(5000, self.update_order)
         logger.info(f"Rejected order {order_id}.")
-
 
     def print_receipt(self, order):
         receipt_order = Order()
@@ -392,6 +363,7 @@ class OrderManager:
         self.printer.print_internal_order(receipt_order)
 
     def populate_ui(self, order):
+        logger.info("populate_ui")
         try:
             self.order_id = order['id']
             self.label_order.config(text = f"{self.order_id}")
@@ -419,7 +391,7 @@ class OrderManager:
 
 
     def cleanup_ui(self):
-        # Clear all Labels
+        logger.info("cleanup_ui")
         self.label_no_orders.config(text="")
         self.label_order.config(text="")
         self.label_date.config(text = "")
