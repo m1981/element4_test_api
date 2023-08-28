@@ -133,8 +133,11 @@ class OrderManager:
 
         comments_label = tk.Label(frame_labels, text="Komentarz:", font = self.label_font, anchor='e')
         comments_label.grid(row=4, column=0, sticky='e')
-        self.label_comments = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
+        self.label_comments = tk.Text(frame_labels, height=4, width=20, wrap='word', font=self.default_font)
         self.label_comments.grid(row=4, column=1, sticky='w')
+        self.label_comments.insert(1.0, "")  # add some text
+        self.label_comments.configure(state="disable")  # make it read-only
+
 
         self.label_no_orders = tk.Label(self.root, text=self.wait_for_orders_msg, font = ("Verdana", 18), fg = "green")
         self.label_no_orders.pack()
@@ -411,9 +414,15 @@ class OrderManager:
             self.label_nip.config(text = f"{order['billing']['nip_do_paragonu']}")
             self.label_phone.config(text = f"{order['billing']['phone']}")
             self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
-            self.label_comments.config(text = f"{order['dodatki_do_pizzy']['notatki']}")
-            self.treeview.delete(*self.treeview.get_children())
+            comments = order['dodatki_do_pizzy']['notatki']
 
+            comments = order['dodatki_do_pizzy']['notatki']
+            self.label_comments.configure(state="normal")  # make it editable
+            self.label_comments.delete("1.0", "end")  # delete the existing text
+            self.label_comments.insert("1.0", comments)  # insert the new text
+            self.label_comments.configure(state="disable")  # make it read-only again
+            # Clear Treeview
+            self.treeview.delete(*self.treeview.get_children())
             if self.local_files_path:
                 self.local_orders_label.config(text="Testing: Local orders")
             else:
