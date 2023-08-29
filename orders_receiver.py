@@ -248,9 +248,12 @@ class OrderManager:
             self.handle_exception(e)
 
         orders.reverse()
+        for order in orders:
+            logger.info(f"Fetched: id: {order['id']}, status: {order['status']}")
         return orders
 
     def change_order_status(self, order_id, new_status):
+        old_status = self.get_order_by_id(order_id)['status']
         if self.use_local_files:
             os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
         else:
@@ -263,8 +266,7 @@ class OrderManager:
                 proxies=self.proxies,
             )
             r.raise_for_status()
-            logger.info(f"Response: {r.json()}")  # Log the response from the server
-
+            logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
@@ -290,7 +292,6 @@ class OrderManager:
         return orders
 
     def is_processing(self, order):
-      logger.info(f"Order ID: {order['id']} status:  {order['status']}, Process status: {self.process_status}")
       return order["status"] == self.process_status
 
     def order_processing_effects(self, order):
@@ -310,7 +311,6 @@ class OrderManager:
         if self.root.state() == 'iconic':  # Check if the window is minimized
             self.root.deiconify()  # If so, restore it
         self.root.attributes('-topmost', True)  # brings the window to top
-        #self.root.after_idle(self.root.attributes, '-topmost', 0)  # makes sure it is not permanently on top
 
     def update_order(self):
         logger.info("update_order")
@@ -327,16 +327,20 @@ class OrderManager:
 
 
     def process_orders(self, orders):
-        logger.info("process_orders {}".format(len(orders)))
+        logger.info(f"Number of orders to process: {len(orders)}")
         has_orders_now = False
         for order in orders:
-            logger.info(f"order {order['id']}")
+            logger.info(f"Processing order with ID {order['id']} and status {order['status']}")
             if self.is_processing(order):  # An order is in processing state
                 self.order_id = order["id"]
+                logger.info(f"Processing: id: {order['id']}, status: {order['status']}")
                 has_orders_now = True
                 break
 
         logger.info("after for loop")
+        if not self.has_orders:
+            self.cleanup_ui()
+
         if not self.has_orders and has_orders_now:
             self.order_processing_effects(order)
         elif self.has_orders and not has_orders_now and orders:
@@ -352,14 +356,12 @@ class OrderManager:
 
     def show_order(self, order):
         logger.info(f"show_order {order['id']}")
-        self.force_deiconify_and_bring_to_front()  # Add this line
+        self.force_deiconify_and_bring_to_front()
         self.populate_ui(order)
-        self.label_no_orders.config(text="")
 
     def show_no_order(self):
         logger.info("show_no_order")
         self.cleanup_ui()
-        self.label_no_orders.config(text=self.wait_for_orders_msg)
 
 
     def update_buttons(self, state):
@@ -368,34 +370,36 @@ class OrderManager:
 
     def accept_order(self, order_id):
         try:
-          logger.info("accept_order ID: {order_id}")
-          self.update_buttons(state=tk.DISABLED)
-          self.print_receipt(self.get_order_by_id(order_id))
-          self.change_order_status(order_id, 'completed')
-          self.stop_sound()
-          self.update_order() # Manually update orders immediately after accepting an order
-          if self._update_id is not None:
-              self.root.after_cancel(self._update_id)
-          self._update_id = self.root.after(5000, self.update_order)
-          self.has_orders = False # Reset the flag after accepting the order
-          logger.info(f"Accepted order {order_id}.")
+            logger.info(f"Accepting order: {order_id}")
+            self.update_buttons(state=tk.DISABLED)
+            self.print_receipt(self.get_order_by_id(order_id))
+            self.change_order_status(order_id, 'completed')
+            self.stop_sound()
+            self.has_orders = False # Set the flag to False before updating the order
+            self.update_order() # Manually update orders immediately after accepting an order
+            if self._update_id is not None:
+                self.root.after_cancel(self._update_id)
+            self._update_id = self.root.after(5000, self.update_order)
+            logger.info(f"Accepted order {order_id}.")
         except Exception as e:
             self.handle_exception(e)
 
     def reject_order(self, order_id):
         try:
-          logger.info("reject_order")
-          self.update_buttons(state=tk.DISABLED)
-          self.change_order_status(order_id, 'cancelled')
-          self.stop_sound()
-          self.update_order()  # Manually update orders immediately after rejecting an order
-          if self._update_id is not None:
-              self.root.after_cancel(self._update_id)
-          self._update_id = self.root.after(5000, self.update_order)
-          self.has_orders = False # Reset the flag after rejecting the order
-          logger.info(f"Rejected order {order_id}.")
+            logger.info(f"Rejecting order: {order_id}")
+            self.update_buttons(state=tk.DISABLED)
+            self.change_order_status(order_id, 'cancelled')
+            self.stop_sound()
+            self.has_orders = False # Set the flag to False before updating the order
+            self.update_order()  # Manually update orders immediately after rejecting an order
+            if self._update_id is not None:
+                self.root.after_cancel(self._update_id)
+            self._update_id = self.root.after(5000, self.update_order)
+            logger.info(f"Rejected order {order_id}.")
         except Exception as e:
             self.handle_exception(e)
+
+
 
     def print_receipt(self, order):
         receipt_order = Order()
@@ -428,6 +432,7 @@ class OrderManager:
             self.label_comments.delete("1.0", "end")  # delete the existing text
             self.label_comments.insert("1.0", comments)  # insert the new text
             self.label_comments.configure(state="disable")  # make it read-only again
+            self.label_no_orders.config(text="")
             # Clear Treeview
             self.treeview.delete(*self.treeview.get_children())
             if self.local_files_path:
@@ -454,19 +459,16 @@ class OrderManager:
         self.label_nip.config(text="")
         self.label_phone.config(text="")
         self.label_na_miejscu_na_wynos.config(text="")
-        self.label_comments.config(text="")
+        self.label_comments.configure(state="normal")
+        self.label_comments.delete("1.0", "end")
+        self.label_no_orders.config(text=self.wait_for_orders_msg)
         # Clear Treeview
         self.treeview.delete(*self.treeview.get_children())
 
 
     def handle_exception(self, e, error_message="An unexpected error occurred"):
-        # Log the exception
         logger.exception(f"{error_message}: {str(e)}")
-
-        # Format the exception message for display
         exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
-
-        # Show the exception message in a message box
         messagebox.showerror("Error", exception_message)
         sys.exit(1)
 
