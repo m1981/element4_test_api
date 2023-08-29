@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import winsound
+import collections.abc
 import requests
 import os
 import sys
@@ -55,6 +56,9 @@ class OrderManager:
         self.use_local_printer = config['use_local_printer']
         self.printer = Printer(elzabdr, config['printer']['port'], config['printer']['speed'], config['printer'][
         'timeout'], self.use_local_printer)
+        self.proxies = None
+        if config['use_proxy']:
+            self.proxies = config['proxy']
 
         self.order_exists = False
         self.order_id = None
@@ -177,7 +181,7 @@ class OrderManager:
         self.treeview.heading("3", text="Cena", anchor="w")
 
         self.update_buttons(state=tk.DISABLED)
-        self.root.after(100, self.update_order)
+        self.root.after(5000, self.update_order)
 
 
 
@@ -233,11 +237,12 @@ class OrderManager:
                 base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 response = requests.get(
                     f"{self.rest_api_url}/orders",
-                    headers={"Authorization": f"Basic {base64_encoded_data}"}
+                    headers={"Authorization": f"Basic {base64_encoded_data}"},
+                    proxies=self.proxies,
                 )
                 response.encoding = 'utf-8'
                 response.raise_for_status() # Raise exception if status code indicates an HTTP error
-                orders = [bleach.clean(order) for order in response.json()]
+                orders = [self.clean_recursive(order) for order in response.json()]
 
         except Exception as e:
             self.handle_exception(e)
@@ -254,7 +259,8 @@ class OrderManager:
             r = requests.put(
                 f"{self.rest_api_url}/orders/{order_id}",
                 headers={"Authorization": f"Basic {base64_encoded_data}"},
-                json=data
+                json=data,
+                proxies=self.proxies,
             )
             r.raise_for_status()
             logger.info(f"Response: {r.json()}")  # Log the response from the server
@@ -268,7 +274,8 @@ class OrderManager:
             base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
             response = requests.get(
                 f"{self.rest_api_url}/orders/{order_id}",
-                headers={"Authorization": f"Basic {base64_encoded_data}"}
+                headers={"Authorization": f"Basic {base64_encoded_data}"},
+                proxies=self.proxies,
             )
             return response.json()
 
@@ -462,6 +469,18 @@ class OrderManager:
         # Show the exception message in a message box
         messagebox.showerror("Error", exception_message)
         sys.exit(1)
+
+
+    def clean_recursive(self, d):
+        result = {}
+        for key, value in d.items():
+            if isinstance(value, collections.abc.Mapping):
+                result[bleach.clean(key)] = self.clean_recursive(value)
+            elif isinstance(value, str):
+                result[bleach.clean(key)] = bleach.clean(value)
+            else:
+                result[bleach.clean(key)] = value
+        return result
 
 if __name__=="__main__":
   manager = OrderManager()

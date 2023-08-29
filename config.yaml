@@ -5,3 +5,7 @@ printer:
   port: 1
   speed: 9600
   timeout: 5
+use_proxy: 0
+proxy:
+  http: 'http://10.158.100.1:8080'
+  https: 'http://10.158.100.1:8080'
