@@ -446,7 +446,9 @@ class OrderManager:
                 self.console_printer_label.config(text="")
 
             for item in order['line_items']:
-                self.treeview.insert("", 'end', values=(item['name'], item['quantity'], item['total']))
+                price = float(item['total']) + float(item['total_tax'])
+                formatted_price = '{:.2f} PLN'.format(price)
+                self.treeview.insert("", 'end', values=(item['name'], item['quantity'], formatted_price))
         except Exception as e:
             self.handle_exception(e)
 
