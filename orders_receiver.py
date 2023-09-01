@@ -19,7 +19,7 @@ import yaml
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from receipt import Order, ReceiptItem, Printer, elzabdr
-
+from version import __version__
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ handler_console = logging.StreamHandler()
 handler_console.setLevel(logging.ERROR)
 
 # Formatter specifies the layout of logs
-handler_file.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+handler_file.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 handler_console.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
 
 # Add both handlers to the logger
@@ -48,6 +48,15 @@ logger.addHandler(handler_console)
 
 class OrderManager:
     def __init__(self):
+        logger.info("")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("App Version: {}".format(__version__))
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+
         with open('config.yaml', 'r') as stream:
             config = yaml.safe_load(stream)
 
@@ -76,7 +85,7 @@ class OrderManager:
         self.has_orders = False
         self._update_id = None
         self.root = tk.Tk()
-
+        self.root.title(str(__version__))
         self.wait_for_orders_msg = "Czekam na zamówienia..."
         # Set the initial size of the window
         width = 800  # Desired width
