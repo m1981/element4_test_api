@@ -1,21 +1,7 @@
 {
-   "billing":{
-      "czy_chce_nip":"nie",
-      "first_name":"Pawe\u0142",
-      "last_name":"",
-      "na_miejscu_na_wynos":"Na wynos",
-      "nip_do_paragonu":"",
-      "phone":"791630003"
-   },
+
    "date_created": "2023-08-23T08:10:00",
-   "dodatki_do_pizzy":{
-      "dodatki_do_pizzy_popup":"",
-      "dodatki_do_sniadan":"",
-      "info_zamowienia":"",
-      "notatki":""
-   },
    "id":2410,
-   "is_editable":false,
    "line_items":[
       {
          "name":"Danie Dnia",
@@ -37,11 +23,6 @@
          "total_tax":"1.04"
       }
    ],
-   "needs_payment":false,
-   "needs_processing":true,
-   "number":"2410",
    "order_key":"wc_order_Zh2mi91rK4O4V",
-   "status":"processing",
-   "total":"14.00",
-   "total_tax":"1.04"
+   "status":"processing"
 }
