@@ -23,7 +23,7 @@ from version import __version__, __build_date__, __build_time__
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 log_dir, log_file = 'logs', 'orders.log'  # Place your log files in a logs directory
 os.makedirs(log_dir, exist_ok=True)  # Ensure logs directory exists
