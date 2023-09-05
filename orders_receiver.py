@@ -189,6 +189,7 @@ class OrderManager:
         self.treeview.heading("2", text="Ilość", anchor="w")
         self.treeview.heading("3", text="Cena", anchor="w")
 
+        self.update_buttons(tk.DISABLED)
         self.root.after(5000, self.update_order)
 
 
@@ -313,6 +314,7 @@ class OrderManager:
 
     def update_order(self):
         try:
+            self.order_id = None
             orders = self.get_orders()
             for order in orders:
                 logger.info(f"Single Order data: {order}")
