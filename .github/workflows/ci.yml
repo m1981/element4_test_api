@@ -24,7 +24,7 @@ jobs:
 
     - name: run build script
       shell: cmd
-      run: .\build_app.bat
+      run: .\build.bat
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
