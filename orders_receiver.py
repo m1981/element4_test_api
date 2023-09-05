@@ -390,7 +390,7 @@ class OrderManager:
             self.label_no_orders.config(text="")
             # Clear Treeview
             self.treeview.delete(*self.treeview.get_children())
-            if self.local_files_path:
+            if self.use_local_files:
                 self.local_orders_label.config(text="Testing: Local orders")
             else:
                 self.local_orders_label.config(text="")
