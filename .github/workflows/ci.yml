@@ -23,8 +23,8 @@ jobs:
         node-version: '18'
 
     - name: run build script
-      run: |
-        build_app.bat
+      shell: cmd
+      run: .\build_app.bat
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
