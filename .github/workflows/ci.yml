@@ -14,6 +14,21 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Fetch latest tag
+      id: latesttag
+      run: |
+        echo ::set-output name=version::$(git describe --tags --abbrev=0)
+
+    - name: Fetch current commit hash
+      id: commithash
+      run: |
+        echo ::set-output name=hash::$(git rev-parse --short HEAD)
+
+    - name: Set APP Name
+      id: appname
+      run: |
+        echo ::set-output name=appname::orders_receiver_${{ steps.latesttag.outputs.version }}_${{ steps.commithash.outputs.hash }}_${{ github.run_id }}
+
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
@@ -27,12 +42,15 @@ jobs:
     - name: Install dependencies
       run: pip install pyinstaller
 
-    - name: run build script
+    - name: Run build script
       shell: cmd
-      run: .\build.bat
+      run: "C:\\hostedtoolcache\\windows\\Python\\3.11.4\\x64\\python.exe" -m PyInstaller --onefile --name %APPNAME% my_app.spec
+      env:
+        APPNAME: ${{ steps.appname.outputs.appname }}
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: built-application
+        name: ${{ steps.appname.outputs.appname }}
         path: dist/*
+

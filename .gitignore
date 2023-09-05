@@ -4,7 +4,6 @@ build
 __pycache__
 dist
 logsy
-*.spec
 logs
 dist.zip
 desktop.ini
