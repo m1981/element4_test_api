@@ -23,7 +23,7 @@ from version import __version__, __build_date__, __build_time__
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
 
 log_dir, log_file = 'logs', 'orders.log'  # Place your log files in a logs directory
 os.makedirs(log_dir, exist_ok=True)  # Ensure logs directory exists
@@ -259,20 +259,19 @@ class OrderManager:
         return orders
 
     def change_order_status(self, order_id, new_status):
-        try:
-            if self.use_local_files:
-                os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
-            else:
-                base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-                data = {"status": new_status}
-                r = requests.put(
-                    f"{self.rest_api_url}/orders/{order_id}",
-                    headers={"Authorization": f"Basic {base64_encoded_data}"},
-                    json=data,
-                    proxies=self.proxies,
-                )
-                r.raise_for_status()
-                logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
+        if self.use_local_files:
+            os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
+        else:
+            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+            data = {"status": new_status}
+            r = requests.put(
+                f"{self.rest_api_url}/orders/{order_id}",
+                headers={"Authorization": f"Basic {base64_encoded_data}"},
+                json=data,
+                proxies=self.proxies,
+            )
+            r.raise_for_status()
+            logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
@@ -303,7 +302,9 @@ class OrderManager:
 
     def order_processing_effects(self, order):
         self.show_order(order)
-        self.play_sound()
+        if self.root.state() == 'iconic':
+            self.root.deiconify()
+        self.stop_sound()
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
@@ -323,16 +324,16 @@ class OrderManager:
                 self.order_not_processing_effects()
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
-            exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
-            messagebox.showerror("Error", exception_message)
+            self.handle_exception(e)
 
 
     def show_order(self, order):
+        logger.info(f"show_order {order['id']}")
         self.populate_ui(order)
 
     def show_no_order(self):
         self.cleanup_ui()
-        self.label_no_orders.config(text="Brak nowych zamówień.")
+
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
@@ -368,7 +369,6 @@ class OrderManager:
 
     def populate_ui(self, order):
         try:
-            self.order_id = order['id']
             self.label_order.config(text = f"{self.order_id}")
             self.label_date.config(text = self.convert_date(datetime.strptime(order['date_created'][:-1], "%Y-%m-%dT%H:%M:%S")))
             self.label_nip.config(text = f"{order['billing']['nip_do_paragonu']}")
