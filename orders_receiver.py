@@ -244,7 +244,7 @@ class OrderManager:
             else:
                 base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 response = requests.get(
-                    f"{self.rest_api_url}/orders",
+                    f"{self.rest_api_url}/orders?per_page=50",
                     headers={"Authorization": f"Basic {base64_encoded_data}"},
                     proxies=self.proxies,
                 )
@@ -333,10 +333,13 @@ class OrderManager:
         except Exception as e:
             self.handle_exception(e)
 
-
     def show_order(self, order):
         logger.info(f"show_order {order['id']}")
         self.populate_ui(order)
+
+    def check_orders_immediately(self):
+        if not self.order_being_processed:
+            self.update_order()
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
@@ -349,6 +352,7 @@ class OrderManager:
         self.cleanup_ui()
         logger.info(f"Accepted order {order_id}.")
         self.order_being_processed = False
+        self.check_orders_immediately()
 
     def reject_order(self, order_id):
         self.update_buttons(tk.DISABLED)
@@ -356,6 +360,7 @@ class OrderManager:
         self.cleanup_ui()
         logger.info(f"Rejected order {order_id}.")
         self.order_being_processed = False
+        self.check_orders_immediately()
 
     def print_receipt(self, order):
         receipt_order = Order()
