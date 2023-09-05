@@ -1,6 +1,4 @@
 @echo off
-where python
-
 REM Fetch the latest git tag
 for /f "delims=" %%i in ('git describe --tags --dirty') do @set VERSION=%%i
 
@@ -20,5 +18,4 @@ echo __version__ = "%VERSION%" > version.py
 echo __build_date__ = "%BUILD_DATE%" >> version.py
 echo __build_time__ = "%BUILD_TIME%" >> version.py
 
-call "C:\Users\nakiewic\AppData\Local\Programs\Python\Python311\python.exe" -m PyInstaller --onefile --name %APPNAME% orders_receiver.py receipt.py version.py
-pause
+python.exe -m PyInstaller --onefile --name %APPNAME% orders_receiver.py receipt.py version.py

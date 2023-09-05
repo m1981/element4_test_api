@@ -1,0 +1,33 @@
+name: Build Figa Order Manager
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11.4'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: run build script
+      run: |
+        call build_app.bat
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: built-application
+        path: dist/*
