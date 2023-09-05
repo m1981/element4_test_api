@@ -302,9 +302,9 @@ class OrderManager:
 
     def order_processing_effects(self, order):
         self.show_order(order)
-        if self.root.state() == 'iconic':
-            self.root.deiconify()
-        self.stop_sound()
+        self.root.attributes('-topmost', True)
+        if not self.window_in_focus.get() or self.root.state() == 'iconic':
+            self.play_sound()  # Play the notification sound
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
@@ -323,6 +323,7 @@ class OrderManager:
                     break
             else:
                 self.order_not_processing_effects()
+            # end for
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
             self.handle_exception(e)
