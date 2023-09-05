@@ -36,7 +36,7 @@ handler_file.suffix = "%Y%m%d"  # Save logs with date in file name
 
 # Handler for writing logs to the console
 handler_console = logging.StreamHandler()
-handler_console.setLevel(logging.ERROR)
+handler_console.setLevel(logging.WARNING)
 
 # Formatter specifies the layout of logs
 handler_file.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -83,8 +83,7 @@ class OrderManager:
         self.label_comments = None
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
-        self.has_orders = False
-        self._update_id = None
+
         self.root = tk.Tk()
         self.root.title("{}       Compilation time: {} {}".format(str(__version__), __build_date__, __build_time__))
         self.wait_for_orders_msg = "Czekam na zamówienia..."
@@ -190,7 +189,6 @@ class OrderManager:
         self.treeview.heading("2", text="Ilość", anchor="w")
         self.treeview.heading("3", text="Cena", anchor="w")
 
-        self.update_buttons(state=tk.DISABLED)
         self.root.after(5000, self.update_order)
 
 
@@ -235,8 +233,6 @@ class OrderManager:
 
     def onFocusOut(self, event):
         self.window_in_focus.set(False)  # Indicate that window lost focus
-        if self.has_orders:
-            self.play_sound()
 
     def get_orders(self):
         orders = []
@@ -263,20 +259,20 @@ class OrderManager:
         return orders
 
     def change_order_status(self, order_id, new_status):
-        old_status = self.get_order_by_id(order_id)['status']
-        if self.use_local_files:
-            os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
-        else:
-            base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
-            data = {"status": new_status}
-            r = requests.put(
-                f"{self.rest_api_url}/orders/{order_id}",
-                headers={"Authorization": f"Basic {base64_encoded_data}"},
-                json=data,
-                proxies=self.proxies,
-            )
-            r.raise_for_status()
-            logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
+        try:
+            if self.use_local_files:
+                os.remove(os.path.join(self.local_files_path, f'order_{order_id}.json'))
+            else:
+                base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
+                data = {"status": new_status}
+                r = requests.put(
+                    f"{self.rest_api_url}/orders/{order_id}",
+                    headers={"Authorization": f"Basic {base64_encoded_data}"},
+                    json=data,
+                    proxies=self.proxies,
+                )
+                r.raise_for_status()
+                logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
@@ -302,113 +298,56 @@ class OrderManager:
         return orders
 
     def is_processing(self, order):
-      return order["status"] == self.process_status
+        assert self.process_status
+        return order["status"] == self.process_status
 
     def order_processing_effects(self, order):
         self.show_order(order)
-        if self.root.state() == 'iconic':
-            self.root.deiconify()
-        self.stop_sound()
+        self.play_sound()
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
         self.show_no_order()
-        self.stop_sound()
         self.update_buttons(state=tk.DISABLED)
-        self.root.attributes('-topmost', 0) # removes topmost state
-
-    def force_deiconify_and_bring_to_front(self):
-        if self.root.state() == 'iconic':  # Check if the window is minimized
-            self.root.deiconify()  # If so, restore it
-        self.root.attributes('-topmost', True)  # brings the window to top
 
     def update_order(self):
-        logger.info("update_order")
         try:
-            logger.info("before get_orders")
             orders = self.get_orders()
-            logger.info("before process_orders")
-            self.process_orders(orders)
-            logger.info("before self.root.after")
+            for order in orders:
+                logger.info(f"Single Order data: {order}")
+                if self.is_processing(order):
+                    self.order_id = order["id"]
+                    self.order_processing_effects(order)
+                    break
+            else:
+                self.order_not_processing_effects()
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
-            self.handle_exception(e)
-        logger.info("end of update_order")
-
-
-    def process_orders(self, orders):
-        logger.info(f"Number of orders to process: {len(orders)}")
-        has_orders_now = False
-        for order in orders:
-            logger.info(f"Processing order with ID {order['id']} and status {order['status']}")
-            if self.is_processing(order):  # An order is in processing state
-                self.order_id = order["id"]
-                logger.info(f"Processing: id: {order['id']}, status: {order['status']}")
-                has_orders_now = True
-                break
-
-        logger.info("after for loop")
-        if not self.has_orders:
-            self.cleanup_ui()
-
-        if not self.has_orders and has_orders_now:
-            self.order_processing_effects(order)
-        elif self.has_orders and not has_orders_now and orders:
-            self.order_id = orders[0]['id']
-            self.order_processing_effects(order)
-        elif self.has_orders and not has_orders_now:
-            self.order_not_processing_effects()
-        else:
-            logger.info("else in process_orders")
-
-        self.has_orders = has_orders_now
+            exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
+            messagebox.showerror("Error", exception_message)
 
 
     def show_order(self, order):
-        logger.info(f"show_order {order['id']}")
-        self.force_deiconify_and_bring_to_front()
         self.populate_ui(order)
 
     def show_no_order(self):
-        logger.info("show_no_order")
         self.cleanup_ui()
-
+        self.label_no_orders.config(text="Brak nowych zamówień.")
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
         self.button_reject.config(state=state)
 
     def accept_order(self, order_id):
-        try:
-            logger.info(f"Accepting order: {order_id}")
-            self.update_buttons(state=tk.DISABLED)
-            self.print_receipt(self.get_order_by_id(order_id))
-            self.change_order_status(order_id, 'completed')
-            self.stop_sound()
-            self.has_orders = False # Set the flag to False before updating the order
-            self.update_order() # Manually update orders immediately after accepting an order
-            if self._update_id is not None:
-                self.root.after_cancel(self._update_id)
-            self._update_id = self.root.after(5000, self.update_order)
-            logger.info(f"Accepted order {order_id}.")
-        except Exception as e:
-            self.handle_exception(e)
+        self.print_receipt(self.get_order_by_id(order_id))
+        self.change_order_status(order_id, 'completed')
+        self.update_buttons(tk.DISABLED)
+        logger.info(f"Accepted order {order_id}.")
 
     def reject_order(self, order_id):
-        try:
-            logger.info(f"Rejecting order: {order_id}")
-            self.update_buttons(state=tk.DISABLED)
-            self.change_order_status(order_id, 'cancelled')
-            self.stop_sound()
-            self.has_orders = False # Set the flag to False before updating the order
-            self.update_order()  # Manually update orders immediately after rejecting an order
-            if self._update_id is not None:
-                self.root.after_cancel(self._update_id)
-            self._update_id = self.root.after(5000, self.update_order)
-            logger.info(f"Rejected order {order_id}.")
-        except Exception as e:
-            self.handle_exception(e)
-
+        self.change_order_status(order_id, 'cancelled')
+        self.update_buttons(tk.DISABLED)
+        logger.info(f"Rejected order {order_id}.")
 
 
     def print_receipt(self, order):
@@ -426,8 +365,8 @@ class OrderManager:
         self.printer.print_receipt(receipt_order)
         self.printer.print_internal_order(receipt_order)
 
+
     def populate_ui(self, order):
-        logger.info("populate_ui")
         try:
             self.order_id = order['id']
             self.label_order.config(text = f"{self.order_id}")
