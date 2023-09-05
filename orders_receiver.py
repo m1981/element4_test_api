@@ -272,7 +272,6 @@ class OrderManager:
                 proxies=self.proxies,
             )
             r.raise_for_status()
-            logger.info(f"Order status changed. Order ID: {order_id}, Old Status: {old_status}, New Status: {new_status}")
 
     def get_order_by_id(self, order_id):
         if self.use_local_files:
@@ -309,7 +308,8 @@ class OrderManager:
         self.update_buttons(state=tk.NORMAL)
 
     def order_not_processing_effects(self):
-        self.show_no_order()
+        self.cleanup_ui()
+        self.label_no_orders.config(text=self.wait_for_orders_msg)
         self.update_buttons(state=tk.DISABLED)
 
     def update_order(self):
@@ -317,7 +317,6 @@ class OrderManager:
             self.order_id = None
             orders = self.get_orders()
             for order in orders:
-                logger.info(f"Single Order data: {order}")
                 if self.is_processing(order):
                     self.order_id = order["id"]
                     self.order_processing_effects(order)
@@ -333,23 +332,21 @@ class OrderManager:
         logger.info(f"show_order {order['id']}")
         self.populate_ui(order)
 
-    def show_no_order(self):
-        self.cleanup_ui()
-
-
     def update_buttons(self, state):
         self.button_accept.config(state=state)
         self.button_reject.config(state=state)
 
     def accept_order(self, order_id):
+        self.update_buttons(tk.DISABLED)
         self.print_receipt(self.get_order_by_id(order_id))
         self.change_order_status(order_id, 'completed')
-        self.update_buttons(tk.DISABLED)
+        self.cleanup_ui()
         logger.info(f"Accepted order {order_id}.")
 
     def reject_order(self, order_id):
-        self.change_order_status(order_id, 'cancelled')
         self.update_buttons(tk.DISABLED)
+        self.change_order_status(order_id, 'cancelled')
+        self.cleanup_ui()
         logger.info(f"Rejected order {order_id}.")
 
 
@@ -414,7 +411,6 @@ class OrderManager:
         self.label_na_miejscu_na_wynos.config(text="")
         self.label_comments.configure(state="normal")
         self.label_comments.delete("1.0", "end")
-        self.label_no_orders.config(text=self.wait_for_orders_msg)
         # Clear Treeview
         self.treeview.delete(*self.treeview.get_children())
 
