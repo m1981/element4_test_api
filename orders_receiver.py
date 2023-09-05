@@ -83,6 +83,7 @@ class OrderManager:
         self.label_comments = None
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
+        self.order_being_processed = False
 
         self.root = tk.Tk()
         self.root.title("{}       Compilation time: {} {}".format(str(__version__), __build_date__, __build_time__))
@@ -304,8 +305,9 @@ class OrderManager:
         self.show_order(order)
         self.root.attributes('-topmost', True)
         if not self.window_in_focus.get() or self.root.state() == 'iconic':
-            self.play_sound()  # Play the notification sound
+            self.play_sound()
         self.update_buttons(state=tk.NORMAL)
+        self.order_being_processed = True
 
     def order_not_processing_effects(self):
         self.cleanup_ui()
@@ -314,16 +316,19 @@ class OrderManager:
 
     def update_order(self):
         try:
-            self.order_id = None
-            orders = self.get_orders()
-            for order in orders:
-                if self.is_processing(order):
-                    self.order_id = order["id"]
-                    self.order_processing_effects(order)
-                    break
+            if not self.order_being_processed:
+                self.order_id = None
+                orders = self.get_orders()
+                for order in orders:
+                    if self.is_processing(order):
+                        self.order_id = order["id"]
+                        self.order_processing_effects(order)
+                        break
+                else:
+                    self.order_not_processing_effects()
+                # end for
             else:
-                self.order_not_processing_effects()
-            # end for
+                logger.info(f"Processing. self.order_id: {self.order_id}")
             self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
             self.handle_exception(e)
@@ -343,13 +348,14 @@ class OrderManager:
         self.change_order_status(order_id, 'completed')
         self.cleanup_ui()
         logger.info(f"Accepted order {order_id}.")
+        self.order_being_processed = False
 
     def reject_order(self, order_id):
         self.update_buttons(tk.DISABLED)
         self.change_order_status(order_id, 'cancelled')
         self.cleanup_ui()
         logger.info(f"Rejected order {order_id}.")
-
+        self.order_being_processed = False
 
     def print_receipt(self, order):
         receipt_order = Order()
