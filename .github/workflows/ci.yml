@@ -28,6 +28,7 @@ jobs:
 
     - name: Set APP Name
       id: appname
+      shell: bash
       run: |
         version=${{ steps.latesttag.outputs.version }}
         hash=${{ steps.commithash.outputs.hash }}
