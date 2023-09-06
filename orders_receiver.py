@@ -83,6 +83,7 @@ class OrderManager:
         self.label_comments = None
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
+        self.order_being_processed = False
 
         self.root = tk.Tk()
         self.root.title("{}       Compilation time: {} {}".format(str(__version__), __build_date__, __build_time__))
@@ -289,7 +290,7 @@ class OrderManager:
     def get_local_orders(self, path):
         orders = []
         files = os.listdir(path)
-        files.sort(reverse=True)  # This will sort the files in descending order
+        files.sort(reverse=True)
         for filename in files:
             if filename.endswith(".json"):
                 with open(os.path.join(path, filename), encoding='utf-8') as f:
@@ -306,6 +307,7 @@ class OrderManager:
         if not self.window_in_focus.get() or self.root.state() == 'iconic':
             self.play_sound()
         self.update_buttons(state=tk.NORMAL)
+        self.order_being_processed = True
 
     def order_not_processing_effects(self):
         self.cleanup_ui()
@@ -313,19 +315,28 @@ class OrderManager:
         self.update_buttons(state=tk.DISABLED)
 
     def update_order(self):
+        print("update_order")
         try:
-            self.order_id = None
-            orders = self.get_orders()
-            for order in orders:
-                if self.is_processing(order):
-                    self.order_id = order["id"]
-                    self.order_processing_effects(order)
-                    break
+            if not self.order_being_processed:
+                print("   NOT being_processed")
+                self.order_id = None
+                print("   get_orders *******")
+                orders = self.get_orders()
+                for order in orders:
+                    if self.is_processing(order):
+                        self.order_id = order["id"]
+                        print("   processing effect")
+                        self.order_processing_effects(order)
+                        break
+                else:
+                    print("   not processing effect")
+                    self.order_not_processing_effects()
+                # end for
             else:
-                self.order_not_processing_effects()
-            # end for
-
-            self.root.after(2000, self.update_order)  # Sleep for 5 seconds before checking new orders
+                print("   don't update (order_being_processed)")
+                logger.info(f"Processing. self.order_id: {self.order_id}")
+            print("   schedule 5000")
+            self.root.after(5000, self.update_order)
         except Exception as e:
             self.handle_exception(e)
 
@@ -333,6 +344,14 @@ class OrderManager:
     def show_order(self, order):
         logger.info(f"show_order {order['id']}")
         self.populate_ui(order)
+
+    def check_orders_immediately(self):
+        if not self.order_being_processed:
+            print("immediately")
+            print("schedule 1000")
+            self.root.after(1000, self.update_order)  # Check orders after a small delay
+        else:
+            print("else immediately")
 
     def update_buttons(self, state):
         self.button_accept.config(state=state)
@@ -344,12 +363,16 @@ class OrderManager:
         self.change_order_status(order_id, 'completed')
         self.cleanup_ui()
         logger.info(f"Accepted order {order_id}.")
+        self.order_being_processed = False
+        self.check_orders_immediately()
 
     def reject_order(self, order_id):
         self.update_buttons(tk.DISABLED)
         self.change_order_status(order_id, 'cancelled')
         self.cleanup_ui()
         logger.info(f"Rejected order {order_id}.")
+        self.order_being_processed = False
+        self.check_orders_immediately()
 
     def print_receipt(self, order):
         receipt_order = Order()
