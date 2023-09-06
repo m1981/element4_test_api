@@ -8,5 +8,5 @@ echo __build_date__ = "Now" >> version.py
 echo __build_time__ = "Now" >> version.py
 
 
-"C:\Users\nakiewic\AppData\Local\Programs\Python\Python311\python.exe"  orders_receiver.py --status processing
+"C:\Program Files\Python311\python.exe" orders_receiver.py --status processing
 pause

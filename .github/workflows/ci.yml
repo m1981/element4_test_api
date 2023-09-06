@@ -16,18 +16,26 @@ jobs:
 
     - name: Fetch latest tag
       id: latesttag
+      continue-on-error: true
       run: |
-        echo ::set-output name=version::$(git describe --tags --abbrev=0)
+        echo ::set-output name=version::$(git describe --tags --abbrev=0 || echo '0.0.0')
 
     - name: Fetch current commit hash
       id: commithash
+      continue-on-error: true
       run: |
-        echo ::set-output name=hash::$(git rev-parse --short HEAD)
+        echo ::set-output name=hash::$(git rev-parse --short HEAD || echo '00000')
 
     - name: Set APP Name
       id: appname
       run: |
-        echo ::set-output name=appname::orders_receiver_${{ steps.latesttag.outputs.version }}_${{ steps.commithash.outputs.hash }}_${{ github.run_id }}
+        version=${{ steps.latesttag.outputs.version }}
+        hash=${{ steps.commithash.outputs.hash }}
+        if [[ -z "$version" || -z "$hash" ]]; then
+          echo "Version or hash was not set correctly"
+          exit 1
+        fi
+        echo ::set-output name=appname::orders_receiver_$version_$hash_${{ github.run_id }}
 
     - name: Setup Python
       uses: actions/setup-python@v2
