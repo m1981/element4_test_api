@@ -44,9 +44,7 @@ jobs:
 
     - name: Run build script
       shell: cmd
-      run: .\build.bat
-      env:
-        APPNAME: ${{ steps.appname.outputs.appname }}
+      run: .\build.bat "${{ steps.appname.outputs.appname }}"
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
