@@ -19,7 +19,7 @@ import yaml
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from receipt import Order, ReceiptItem, Printer, elzabdr
-from version import __version__, __build_date__, __build_time__
+from version import __version__
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -53,7 +53,6 @@ class OrderManager:
         logger.info("----------------------------------------")
         logger.info("----------------------------------------")
         logger.info("App Version: {}".format(__version__))
-        logger.info("Compilation: {} {}".format(__build_date__, __build_time__))
         logger.info("----------------------------------------")
         logger.info("----------------------------------------")
         logger.info("----------------------------------------")
@@ -87,7 +86,7 @@ class OrderManager:
         self.had_orders = False
 
         self.root = tk.Tk()
-        self.root.title("{}       Compilation time: {} {}".format(str(__version__), __build_date__, __build_time__))
+        self.root.title("Version: {}".format(str(__version__)))
         self.wait_for_orders_msg = "Czekam na zamówienia..."
         # Set the initial size of the window
         width = 800  # Desired width

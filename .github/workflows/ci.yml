@@ -18,12 +18,17 @@ jobs:
       run: |
         echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
-    - name: Set APP Name
-      id: appname
+    - name: Set Version and APP Name
+      id: version_appname
       shell: bash
       run: |
         datetime=$(date '+%m.%y__%H.%M')
-        echo "appname=orders_receiver_#${{ github.run_number }}_${{ env.hash }}_$datetime" >> "$GITHUB_ENV"
+        version="#${{ github.run_number }}_${{ env.hash }}_$datetime"
+        echo "version=$version" >> "$GITHUB_ENV"
+        echo "appname=orders_receiver_$version" >> "$GITHUB_ENV"
+
+    - name: Create Version file
+      run: echo "__version__ = '${{ env.version }}'" > version.py
 
     - name: Setup Python
       uses: actions/setup-python@v2
