@@ -14,6 +14,7 @@ jobs:
 
     - name: Fetch current commit hash
       id: commithash
+      shell: bash
       run: |
         echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
@@ -22,7 +23,7 @@ jobs:
       shell: bash
       run: |
         datetime=$(date '+%m.%y__%H.%M')
-        echo "appname=orders_receiver_#${{ github.run_number }}_$hash_$datetime" >> "$GITHUB_ENV"
+        echo "appname=orders_receiver_#${{ github.run_number }}_${{ env.hash }}_$datetime" >> "$GITHUB_ENV"
 
     - name: Setup Python
       uses: actions/setup-python@v2
