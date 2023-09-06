@@ -11,8 +11,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
 
     - name: Fetch current commit hash
       id: commithash
@@ -25,7 +23,7 @@ jobs:
       run: |
         hash=${{ steps.commithash.outputs.hash }}
         datetime=$(date '+%m.%y__%H.%M')
-        echo ::set-output name=appname::orders_receiver_#${{ github.run_number }}_$hash_$datetime
+        echo ::set-output name=appname::orders_receiver_#${{ github.run_number }}_$commithash_$datetime
 
     - name: Setup Python
       uses: actions/setup-python@v2
