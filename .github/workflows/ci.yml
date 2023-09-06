@@ -15,15 +15,14 @@ jobs:
     - name: Fetch current commit hash
       id: commithash
       run: |
-        echo ::set-output name=hash::$(git rev-parse --short HEAD)
+        echo "hash=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
     - name: Set APP Name
       id: appname
       shell: bash
       run: |
-        hash=${{ steps.commithash.outputs.hash }}
         datetime=$(date '+%m.%y__%H.%M')
-        echo ::set-output name=appname::orders_receiver_#${{ github.run_number }}_$hash_$datetime
+        echo "appname=orders_receiver_#${{ github.run_number }}_$hash_$datetime" >> "$GITHUB_ENV"
 
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -40,7 +39,7 @@ jobs:
 
     - name: Run build script
       shell: cmd
-      run: .\build.bat "${{ steps.appname.outputs.appname }}"
+      run: .\build.bat "${{ env.appname }}"
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v2
