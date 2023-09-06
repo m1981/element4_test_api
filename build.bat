@@ -1,4 +1,4 @@
-@echo off
+@echo on
 set APPNAME=%1
 call "C:\\hostedtoolcache\\windows\\Python\\3.11.4\\x64\\python.exe" -m PyInstaller --onefile --name %APPNAME% orders_receiver.py receipt.py
 
