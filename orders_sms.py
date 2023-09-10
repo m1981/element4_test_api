@@ -27,6 +27,10 @@ class Application:
         frame_buttons = tk.Frame(self.master)
         frame_buttons.pack(pady=2)
 
+        # added label above the buttons
+        label_actions = tk.Label(frame_buttons, text="Order Actions", font=self.default_font)
+        label_actions.pack(pady=5)
+
         button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         button_przyjmij.pack(side='left', padx=20)
 
