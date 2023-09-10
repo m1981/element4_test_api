@@ -1,8 +1,41 @@
+import logging
+from logging.handlers import TimedRotatingFileHandler
+import os
 import serial
 import threading
+import traceback
 import time
 import tkinter as tk
+from tkinter import messagebox
+import yaml
+
 from modules.serial_connection import SerialConnection
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+log_dir, log_file = 'logs', 'sms.log'  # Place your log files in a logs directory
+os.makedirs(log_dir, exist_ok=True)  # Ensure logs directory exists
+
+handler_file = TimedRotatingFileHandler(os.path.join(log_dir, log_file),
+                                   when="midnight",
+                                   interval=1,
+                                   encoding='utf-8')
+handler_file.suffix = "%Y%m%d"  # Save logs with date in file name
+
+# Handler for writing logs to the console
+handler_console = logging.StreamHandler()
+handler_console.setLevel(logging.WARNING)
+
+# Formatter specifies the layout of logs
+handler_file.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+handler_console.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+
+# Add both handlers to the logger
+logger.addHandler(handler_file)
+logger.addHandler(handler_console)
+
 
 class Application:
     def __init__(self, master, config):
@@ -22,25 +55,27 @@ class Application:
         self.scanner_thread.start()
 
     def scan_number(self):
+        ser = None
         while True:
             try:
                 ser = self.connection.create_serial_connection(self.scanner_port)
-
                 if ser:
                     barcode_data = ser.readline().decode('utf-8').strip()
                     time.sleep(0.2)  # delay for 200 ms
                     if len(barcode_data) > 0:
                         self.update_label(barcode_data)  # update the label with read phone number
-
             except serial.SerialException as e:
-                # handle the error gracefully
-                # logging.error(f'Error occurred while connecting to {self.scanner_port}: {str(e)}')
-                print(f"Cannot open port {self.scanner_port}. Ensure it's valid and not in use.")
-                self.update_label("Scanning...")  # revert to "Scanning..." status in case of exception.
+                error_message = f"Cannot open port {self.scanner_port}. Ensure it's valid and not in use."
+                self.handle_exception(e, error_message)
             finally:
-                if ser.isOpen():
+                if ser and ser.isOpen():
                     ser.close()
 
+    def handle_exception(self, e, error_message="An unexpected error occurred"):
+        logger.exception(f"{error_message}: {str(e)}")
+        exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
+        messagebox.showerror("Error", exception_message)
+        sys.exit(1)
 
     def update_label(self, phone_number=None):
         if phone_number:
