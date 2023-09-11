@@ -36,11 +36,11 @@ class SimulatedSmsFactory(SmsFactory):
         return SimulatedSerialConnection().create_serial_connection(_)
 
     @staticmethod
-    def get_composer(_):
-        return SimulatedSMSComposer()
+    def get_composer(connection):
+        return SMSComposer(connection)
 
     @staticmethod
-    def get_dispatcher(_):
-        composer = SimulatedSmsFactory.get_composer(_)
-        return SimulatedSMSDispatcher(composer)
+    def get_dispatcher(composer):
+        return SMSDispatcher(composer)
+
 
