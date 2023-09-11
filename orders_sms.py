@@ -11,6 +11,8 @@ from tkinter import messagebox
 import yaml
 
 from modules.serial_connection import SerialConnection
+from modules.sms_dispatcher import SMSDispatcher
+from modules.sms_composer import SMSComposer
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -87,18 +89,33 @@ class Application:
                 if ser and ser.isOpen():
                     ser.close()
 
+    def przyjmij(self):
+        # Here you can add more logic specific to the "przyjmij" action
+        message = "Zamówienie przyjęte do realizacji!"
+        self.send_sms(message)
 
-    def handle_exception(self, e, error_message="An unexpected error occurred"):
-        logger.exception(f"{error_message}: {str(e)}")
-        exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
-        messagebox.showerror("Error", exception_message)
-        self.master.quit()
+    def wydaj(self):
+        # Here you can add more logic specific to the "wydaj" action
+        message = "Zamówienie gotowe do odbioru!"
+        self.send_sms(message)
+
 
     def update_label(self, phone_number=None):
         if phone_number:
             self.label_actions.config(text=str(phone_number))
         else:
             self.label_actions.config(text="Scanning...")
+
+    def send_sms(self, message):
+        try:
+            if self.use_console_as_sms:
+                print(f"Simulated SMS to {self.label_actions.cget('text')}: {message}")
+            else:
+                composer = SMSComposer(self.connection.create_serial_connection(self.sms_port))
+                dispatcher = SMSDispatcher(composer)
+                dispatcher.send_sms(self.label_actions.cget("text"), message)
+        except Exception as e:
+            self.handle_exception(e, "Error occurred while sending SMS.")
 
     def init_master(self):
         self.master.geometry("300x50")
@@ -123,11 +140,17 @@ class Application:
         self.label_actions = tk.Label(frame_buttons, text="Order Actions", font=self.default_font)
         self.label_actions.pack(pady=5)
 
-        button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
+        button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", command=self.przyjmij, font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         button_przyjmij.pack(side='left', padx=20)
 
-        button_wydaj = tk.Button(frame_buttons, text="Wydaj", font=self.default_font, width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
+        button_wydaj = tk.Button(frame_buttons, text="Wydaj", command=self.wydaj, font=self.default_font, width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
         button_wydaj.pack(side='left', padx=2)
+
+    def handle_exception(self, e, error_message="An unexpected error occurred"):
+        logger.exception(f"{error_message}: {str(e)}")
+        exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
+        messagebox.showerror("Error", exception_message)
+        self.master.quit()
 
 
 if __name__ == "__main__":
