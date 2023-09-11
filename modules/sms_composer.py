@@ -12,6 +12,7 @@ class SMSComposer:
 
     def compose_sms(self, phone_number, message):
         print("compose_sms {} {}".format(phone_number, message))
+        print("port: " + self._connection.port)
         if self._is_valid_number(phone_number):
             phone_number = "+48" + phone_number
             self._write_with_pause(b'AT+CMGF=1\r')
