@@ -8,11 +8,13 @@ import sys
 import json
 import base64
 import bleach
+import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 import traceback
 import threading
+import time
 import argparse
 import logging
 import yaml
@@ -191,9 +193,6 @@ class OrderManager:
         self.treeview.heading("3", text="Cena", anchor="w")
 
         self.update_buttons(tk.DISABLED)
-        self.root.after(5000, self.update_order)
-
-
 
     def parse_args(self):
         self.parser = argparse.ArgumentParser(description="Process some integers.")
@@ -202,6 +201,8 @@ class OrderManager:
         self.process_status = self.args.status
 
     def run(self):
+        self.thread = threading.Thread(target=self.periodic_order_update, daemon=True)
+        self.thread.start()
         self.root.mainloop()
 
 
@@ -338,15 +339,24 @@ class OrderManager:
             print("  ELSE had_orders")
         print("END order_not_processing_effects")
 
+
     def process_orders(self, orders):
-        print("process_orders -----------------------------------")
         for order in orders:
             if self.is_processing(order):
                 self.order_id = order["id"]
-                self.order_processing_effects(order)
+                self.root.after(0, self.order_processing_effects, order)
                 break
         else:
-            self.order_not_processing_effects()
+            self.root.after(0, self.order_not_processing_effects)
+
+
+    def periodic_order_update(self):
+        while True:  # This will keep running until the program exits
+            try:
+                self.update_order()
+            except Exception as e:
+                self.handle_exception(e, "Exception during order update")
+            time.sleep(5)
 
     def update_order(self):
         print("update_order-----------------------------------")
@@ -360,10 +370,10 @@ class OrderManager:
             else:
                 print("   don't update (order_being_processed)")
                 logger.info(f"Processing. self.order_id: {self.order_id}")
-            print("   schedule 5000")
-            self.root.after(5000, self.update_order)
         except Exception as e:
             self.handle_exception(e)
+
+
 
 
     def show_order(self, order):
@@ -373,8 +383,8 @@ class OrderManager:
     def check_orders_immediately(self):
         if not self.order_being_processed:
             print("immediately")
-            print("schedule 1000")
-            self.root.after(1000, self.update_order)  # Check orders after a small delay
+            print("schedule 2000")
+            self.root.after(2000, self.update_order)  # Check orders after a small delay
         else:
             print("else immediately")
 
