@@ -5,6 +5,7 @@ import serial
 import threading
 import traceback
 import time
+import sys
 import tkinter as tk
 from tkinter import messagebox
 import yaml
@@ -58,24 +59,40 @@ class Application:
         ser = None
         while True:
             try:
-                ser = self.connection.create_serial_connection(self.scanner_port)
-                if ser:
-                    barcode_data = ser.readline().decode('utf-8').strip()
-                    time.sleep(0.2)  # delay for 200 ms
-                    if len(barcode_data) > 0:
-                        self.update_label(barcode_data)  # update the label with read phone number
+                if self.use_local_file_as_scanner:
+                    time.sleep(0.5)
+                    with open('sms.txt', 'r') as file:
+                        phone_number = file.read()
+                        self.update_label(phone_number)
+                else:
+                    ser = self.connection.create_serial_connection(self.scanner_port)
+                    if ser:
+                        barcode_data = ser.readline().decode('utf-8').strip()
+                        time.sleep(0.2)  # delay for 200 ms
+                        if len(barcode_data) > 0:
+                            self.update_label(barcode_data)  # update the label with read phone number
             except serial.SerialException as e:
                 error_message = f"Cannot open port {self.scanner_port}. Ensure it's valid and not in use."
                 self.handle_exception(e, error_message)
+            except FileNotFoundError as e:
+                error_message = f"Cannot find the file 'sms.txt'. Ensure it's in the correct path."
+                self.handle_exception(e, error_message)
+            except PermissionError as e:
+                error_message = "No permission to read the file 'sms.txt'."
+                self.handle_exception(e, error_message)
+            except Exception as e:
+                error_message = "Unknown error"
+                self.handle_exception(e)
             finally:
                 if ser and ser.isOpen():
                     ser.close()
+
 
     def handle_exception(self, e, error_message="An unexpected error occurred"):
         logger.exception(f"{error_message}: {str(e)}")
         exception_message = str(e) + "\n\nTraceback:\n" + traceback.format_exc()
         messagebox.showerror("Error", exception_message)
-        sys.exit(1)
+        self.master.quit()
 
     def update_label(self, phone_number=None):
         if phone_number:
