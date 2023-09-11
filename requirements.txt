@@ -3,3 +3,4 @@ bleach==6.0.0
 pyinstaller==5.13.0
 pyinstaller-hooks-contrib==2023.7
 PyYAML==6.0.1
+pyserial==3.5
