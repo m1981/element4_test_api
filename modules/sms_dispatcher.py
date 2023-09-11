@@ -13,7 +13,7 @@ class SMSDispatcher:
         try:
             self.reset_modem()
             self._composer.compose_sms(phone_number, message)
-            self._composer._write_with_pause(bytes(26))
+            self._composer._write_with_pause(bytes([26]))
             print("Message sent successfully!")
         except Exception as e:
             logging.error(f"Error occurred while sending SMS: {str(e)}")

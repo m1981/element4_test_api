@@ -22,7 +22,6 @@ class SMSComposer:
             raise InvalidPhoneNumberException("Invalid phone number. It should be 9 digits long.")
 
     def _write_with_pause(self, text):
-        time.sleep(self.WAIT_TIME)
         print("_write_with_pause: {}".format(text))
         self._connection.write(text)
         time.sleep(self.WAIT_TIME)
