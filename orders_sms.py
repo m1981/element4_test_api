@@ -11,8 +11,7 @@ from tkinter import messagebox
 import yaml
 
 from modules.serial_connection import SerialConnection
-from modules.sms_dispatcher import SMSDispatcher
-from modules.sms_composer import SMSComposer
+from modules.sms_factory import RealSmsFactory, SimulatedSmsFactory
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -54,6 +53,12 @@ class Application:
         self.use_local_file_as_scanner = self.config['use_local_file_as_scanner']
         self.use_console_as_sms = self.config['use_console_as_sms']
         self.connection = SerialConnection()
+
+        if self.use_console_as_sms:
+            self.sms_factory = SimulatedSmsFactory
+        else:
+            self.sms_factory = RealSmsFactory
+
         self.scanner_thread = threading.Thread(target=self.scan_number, daemon=True)
         self.scanner_thread.start()
 
@@ -108,12 +113,10 @@ class Application:
 
     def send_sms(self, message):
         try:
-            if self.use_console_as_sms:
-                print(f"Simulated SMS to {self.label_actions.cget('text')}: {message}")
-            else:
-                composer = SMSComposer(self.connection.create_serial_connection(self.sms_port))
-                dispatcher = SMSDispatcher(composer)
-                dispatcher.send_sms(self.label_actions.cget("text"), message)
+            connection = self.sms_factory.get_connection(self.sms_port)
+            composer = self.sms_factory.get_composer(connection)
+            dispatcher = self.sms_factory.get_dispatcher(composer)
+            dispatcher.send_sms(self.label_actions.cget("text"), message)
         except Exception as e:
             self.handle_exception(e, "Error occurred while sending SMS.")
 
