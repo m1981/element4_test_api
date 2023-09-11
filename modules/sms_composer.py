@@ -13,9 +13,10 @@ class SMSComposer:
     def compose_sms(self, phone_number, message):
         print("compose_sms {} {}".format(phone_number, message))
         if self._is_valid_number(phone_number):
-            self._write_with_pause('AT+CMGF=1\r')
-            self._write_with_pause(f'AT+CMGS="+48{phone_number}"\r') # Added the '+48' prefix to the phone number
-            self._write_with_pause(f'{message}\r')
+            phone_number = "+48" + phone_number
+            self._write_with_pause(b'AT+CMGF=1\r')
+            self._write_with_pause(b'AT+CMGS="' + phone_number.encode() + b'"\r')
+            self._write_with_pause(message.encode() + b"\r")
         else:
             raise InvalidPhoneNumberException("Invalid phone number. It should be 9 digits long.")
 
