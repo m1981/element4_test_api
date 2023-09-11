@@ -23,7 +23,7 @@ class SMSComposer:
     def _write_with_pause(self, text):
         time.sleep(self.WAIT_TIME)
         print("_write_with_pause: {}".format(text))
-        self._connection.write(text.encode())
+        self._connection.write(text)
         time.sleep(self.WAIT_TIME)
 
     @staticmethod
