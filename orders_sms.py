@@ -119,7 +119,7 @@ class Application:
 
     def update_label(self, phone_number=None):
         if phone_number:
-            self.label_actions.config(text=str(phone_number))
+            self.label_actions.config(text='Tel: +48' + str(phone_number))
         else:
             self.label_actions.config(text="Scanning...")
 
@@ -144,30 +144,29 @@ class Application:
         screen_height = self.master.winfo_screenheight()
         position_top = 25
         offset_right = 20
-        app_height = 80
-        app_width = 400
-        position_right = screen_width - app_width - offset_right
-        self.master.geometry("{}x{}+{}+{}".format(app_width, app_height, position_right, position_top))
+        self.app_height = 40
+        self.app_width = 600
+        position_right = screen_width - self.app_width - offset_right
+        self.master.geometry("{}x{}+{}+{}".format(self.app_width, self.app_height, position_right, position_top))
 
     def create_buttons(self):
-        frame_buttons = tk.Frame(self.master)
-        frame_buttons.pack(pady=2)
 
         # added label above the buttons
-        self.label_actions = tk.Label(frame_buttons, text="Starting...", font=self.default_font)
-        self.label_actions.pack(pady=5)
+        self.label_actions = tk.Label(self.master, text="Starting...", font=self.default_font)
+        self.label_actions.place(x=200, y=20, anchor='e')
 
         button_close = tk.Button(self.master, text="x", command=self.close_app, font=self.default_font, width=1, height=1, bg='#ff0000', fg='#FFFFFF')
         button_close.place(anchor='ne', relx=1, rely=0)
 
-        label_version = tk.Label(self.master, text=str(__version__), font=("Verdana", 8))
-        label_version.place(anchor='sw', relx=0, rely=1)
+        label_version = tk.Label(self.master, text='ver: ' + str(__version__), font=("Verdana", 8))
+        label_version.place(x=self.app_width-30, y=20, anchor='e')
 
-        button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", command=self.przyjmij, font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
-        button_przyjmij.pack(side='left', padx=20)
+        self.button_wydaj = tk.Button(self.master, text="Wydaj", width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
+        self.button_wydaj.place(x=self.app_width-240, y=20, anchor='e')
 
-        button_wydaj = tk.Button(frame_buttons, text="Wydaj", command=self.wydaj, font=self.default_font, width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
-        button_wydaj.pack(side='left', padx=2)
+        self.button_przyjmij = tk.Button(self.master, text="Przyjmij", width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
+        self.button_przyjmij.place(x=self.app_width-320, y=20, anchor='e')
+
 
     def handle_exception(self, e, error_message="An unexpected error occurred"):
         logger.exception(f"{error_message}: {str(e)}")
