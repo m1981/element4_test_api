@@ -28,7 +28,7 @@ handler_file.suffix = "%Y%m%d"  # Save logs with date in file name
 
 # Handler for writing logs to the console
 handler_console = logging.StreamHandler()
-handler_console.setLevel(logging.WARNING)
+handler_console.setLevel(logging.DEBUG)
 
 # Formatter specifies the layout of logs
 handler_file.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -66,6 +66,7 @@ class Application:
         ser = None
         while True:
             try:
+                logger.debug("scan_number")
                 if self.use_local_file_as_scanner:
                     time.sleep(0.5)
                     with open('sms.txt', 'r') as file:
@@ -140,8 +141,10 @@ class Application:
         frame_buttons.pack(pady=2)
 
         # added label above the buttons
-        self.label_actions = tk.Label(frame_buttons, text="Order Actions", font=self.default_font)
+        self.label_actions = tk.Label(frame_buttons, text="Starting...", font=self.default_font)
         self.label_actions.pack(pady=5)
+
+
 
         button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", command=self.przyjmij, font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         button_przyjmij.pack(side='left', padx=20)
