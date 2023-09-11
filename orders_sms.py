@@ -84,6 +84,7 @@ class Application:
                         self.update_label(phone_number)
                 else:
                     ser = self.connection.create_serial_connection(self.scanner_port)
+
                     if ser:
                         barcode_data = ser.readline().decode('utf-8').strip()
                         time.sleep(0.2)  # delay for 200 ms
@@ -127,7 +128,9 @@ class Application:
             connection = self.sms_factory.get_connection(self.sms_port)
             composer = self.sms_factory.get_composer(connection)
             dispatcher = self.sms_factory.get_dispatcher(composer)
-            dispatcher.send_sms(self.label_actions.cget("text"), message)
+            value = self.label_actions.cget("text")
+            print("send_sms label value: {}".format(value))
+            dispatcher.send_sms(value, message)
         except Exception as e:
             self.handle_exception(e, "Error occurred while sending SMS.")
 
