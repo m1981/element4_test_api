@@ -144,7 +144,8 @@ class Application:
         self.label_actions = tk.Label(frame_buttons, text="Starting...", font=self.default_font)
         self.label_actions.pack(pady=5)
 
-
+        button_close = tk.Button(self.master, text="x", command=self.close_app, font=self.default_font, width=1, height=1, bg='#ff0000', fg='#FFFFFF')
+        button_close.place(anchor='ne', relx=1, rely=0)
 
         button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", command=self.przyjmij, font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         button_przyjmij.pack(side='left', padx=20)
@@ -158,6 +159,8 @@ class Application:
         messagebox.showerror("Error", exception_message)
         self.master.quit()
 
+    def close_app(self):
+         self.master.quit()
 
 if __name__ == "__main__":
     root = tk.Tk()
