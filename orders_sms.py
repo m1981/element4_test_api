@@ -12,6 +12,7 @@ import yaml
 
 from modules.serial_connection import SerialConnection
 from modules.sms_factory import RealSmsFactory, SimulatedSmsFactory
+from version import __version__
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -41,6 +42,15 @@ logger.addHandler(handler_console)
 
 class Application:
     def __init__(self, master, config):
+        logger.info("")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("App Version: {}".format(__version__))
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+        logger.info("----------------------------------------")
+
         self.master = master
         self.config = config
         self.default_font = font = ("Verdana", 10)
@@ -146,6 +156,9 @@ class Application:
 
         button_close = tk.Button(self.master, text="x", command=self.close_app, font=self.default_font, width=1, height=1, bg='#ff0000', fg='#FFFFFF')
         button_close.place(anchor='ne', relx=1, rely=0)
+
+        label_version = tk.Label(self.master, text=str(__version__), font=("Verdana", 8))
+        label_version.place(anchor='sw', relx=0, rely=1)
 
         button_przyjmij = tk.Button(frame_buttons, text="Przyjmij", command=self.przyjmij, font=self.default_font, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         button_przyjmij.pack(side='left', padx=20)
