@@ -54,6 +54,8 @@ class Application:
         self.master = master
         self.config = config
         self.default_font = font = ("Verdana", 10)
+        self.buttons_enabled = tk.BooleanVar()
+        self.buttons_enabled.set(True)
 
         self.init_master()
         self.create_buttons()
@@ -73,22 +75,19 @@ class Application:
         self.scanner_thread.start()
 
     def scan_number(self):
+        self._async_disable_buttons()
         ser = None
         while True:
             try:
                 logger.debug("scan_number")
-                if self.use_local_file_as_scanner:
-                    time.sleep(0.5)
-                    with open('sms.txt', 'r') as file:
-                        phone_number = file.read()
-                        self.update_label(phone_number)
-                else:
-                    ser = self.connection.create_serial_connection(self.scanner_port)
-                    if ser:
-                        barcode_data = ser.readline().decode('utf-8').strip()
-                        time.sleep(0.2)  # delay for 200 ms
-                        if len(barcode_data) > 0:
-                            self.update_label(barcode_data)  # update the label with read phone number
+                ser = self.connection.create_serial_connection(self.scanner_port)
+                if ser:
+                    phone_num = ser.readline().decode('utf-8').strip()
+                    time.sleep(0.2)  # delay for 200 ms
+                    if len(phone_num) > 0:
+                        print(len(phone_num))
+                        self._async_enable_buttons()
+                        self._async_update_label(phone_number=phone_num)
             except serial.SerialException as e:
                 error_message = f"Cannot open port {self.scanner_port}. Ensure it's valid and not in use."
                 self.handle_exception(e, error_message)
@@ -107,10 +106,12 @@ class Application:
 
     def przyjmij(self):
         message = "Zamowienie przyjete do realizacji :)"
+        self._async_disable_buttons()
         self.send_sms(message)
 
     def wydaj(self):
         message = "Zamowienie gotowe do odbioru :)"
+        self._async_disable_buttons()
         self.send_sms(message)
 
 
@@ -163,6 +164,31 @@ class Application:
 
         self.button_przyjmij = tk.Button(self.master, text="Przyjmij", command=self.przyjmij, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         self.button_przyjmij.place(x=self.app_width-320, y=20, anchor='e')
+
+    def _async_update_label(self, phone_number=None):
+        self.master.after(0, lambda: self.update_label(phone_number))
+
+    def _async_disable_buttons(self):
+        if self.buttons_enabled.get():
+            self.buttons_enabled.set(False)
+            self.master.after(0, self.disable_buttons)
+
+    def _async_enable_buttons(self):
+        if not self.buttons_enabled.get():
+            self.buttons_enabled.set(True)
+            self.master.after(0, self.enable_buttons)
+
+    def enable_buttons(self):
+        self.update_buttons(tk.NORMAL)
+        self.label_actions.config(text="Enabled")
+
+    def disable_buttons(self):
+        self.update_buttons(tk.DISABLED)
+        self.label_actions.config(text="Scanning...")
+
+    def update_buttons(self, state):
+        self.button_przyjmij.config(state=state)
+        self.button_wydaj.config(state=state)
 
     def handle_exception(self, e, error_message="An unexpected error occurred"):
         logger.exception(f"{error_message}: {str(e)}")
