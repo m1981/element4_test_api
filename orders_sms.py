@@ -84,7 +84,6 @@ class Application:
                         self.update_label(phone_number)
                 else:
                     ser = self.connection.create_serial_connection(self.scanner_port)
-
                     if ser:
                         barcode_data = ser.readline().decode('utf-8').strip()
                         time.sleep(0.2)  # delay for 200 ms
@@ -107,19 +106,17 @@ class Application:
                     ser.close()
 
     def przyjmij(self):
-        # Here you can add more logic specific to the "przyjmij" action
-        message = "Zamówienie przyjęte do realizacji!"
+        message = "Zamowienie przyjete do realizacji :)"
         self.send_sms(message)
 
     def wydaj(self):
-        # Here you can add more logic specific to the "wydaj" action
-        message = "Zamówienie gotowe do odbioru!"
+        message = "Zamowienie gotowe do odbioru :)"
         self.send_sms(message)
 
 
     def update_label(self, phone_number=None):
         if phone_number:
-            self.label_actions.config(text='Tel: +48' + str(phone_number))
+            self.label_actions.config(text=str(phone_number))
         else:
             self.label_actions.config(text="Scanning...")
 
@@ -161,12 +158,11 @@ class Application:
         label_version = tk.Label(self.master, text='ver: ' + str(__version__), font=("Verdana", 8))
         label_version.place(x=self.app_width-30, y=20, anchor='e')
 
-        self.button_wydaj = tk.Button(self.master, text="Wydaj", width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
+        self.button_wydaj = tk.Button(self.master, text="Wydaj", command=self.wydaj, width=8, height=1, bg='#e07ebf', fg='#FFFFFF')
         self.button_wydaj.place(x=self.app_width-240, y=20, anchor='e')
 
-        self.button_przyjmij = tk.Button(self.master, text="Przyjmij", width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
+        self.button_przyjmij = tk.Button(self.master, text="Przyjmij", command=self.przyjmij, width=8, height=1, bg='#00b4c9', fg='#FFFFFF')
         self.button_przyjmij.place(x=self.app_width-320, y=20, anchor='e')
-
 
     def handle_exception(self, e, error_message="An unexpected error occurred"):
         logger.exception(f"{error_message}: {str(e)}")

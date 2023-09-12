@@ -1,4 +1,6 @@
 import logging
+import time
+import serial
 
 class SMSDispatcher:
     END_OF_MESSAGE = bytes([26])
@@ -11,7 +13,7 @@ class SMSDispatcher:
         self._composer._write_with_pause(b'ATZ\r')
 
     def send_sms(self, phone_number, message):
-        print("send_sms")
+        print('send_sms')
         try:
             self.reset_modem()
             self._composer.compose_sms(phone_number, message)

@@ -6,7 +6,7 @@ class SerialConnection:
 
     def create_serial_connection(self, port):
         try:
-            connection = serial.Serial(port, self.BAUDRATE, parity='N', stopbits=1, bytesize=8, timeout=5)
+            connection = serial.Serial(port, self.BAUDRATE, parity='N', stopbits=1, bytesize=8, timeout=1)
         except serial.SerialException as e:
             logging.error(f'Error occurred while connecting to {port}: {str(e)}')
             raise
