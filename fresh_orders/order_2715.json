@@ -1,0 +1,217 @@
+{
+  "_links": {
+    "collection": [
+      {
+        "href": "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders"
+      }
+    ],
+    "self": [
+      {
+        "href": "https://fabrykasmakow.com.pl/wp-json/wc/v3/orders/2715"
+      }
+    ]
+  },
+  "billing": {
+    "address_1": "",
+    "address_2": "",
+    "city": "",
+    "company": "",
+    "country": "",
+    "czy_chce_nip": "",
+    "email": "",
+    "first_name": "Anna",
+    "last_name": "",
+    "na_miejscu_na_wynos": "Na wynos",
+    "nip_do_paragonu": "",
+    "phone": "503755544",
+    "postcode": "",
+    "state": ""
+  },
+  "cart_hash": "7c59c091421f595c8818729f2b28f7cc",
+  "cart_tax": "6.23",
+  "coupon_lines": [],
+  "created_via": "checkout",
+  "currency": "PLN",
+  "currency_symbol": "z\u0142",
+  "customer_id": 0,
+  "customer_ip_address": "217.97.131.187",
+  "customer_note": "",
+  "customer_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.2045.31",
+  "date_completed": "2023-09-19T13:12:49",
+  "date_completed_gmt": "2023-09-19T11:12:49",
+  "date_created": "2023-09-19T13:11:14",
+  "date_created_gmt": "2023-09-19T11:11:14",
+  "date_modified": "2023-09-19T13:12:49",
+  "date_modified_gmt": "2023-09-19T11:12:49",
+  "date_paid": "2023-09-19T13:11:50",
+  "date_paid_gmt": "2023-09-19T11:11:50",
+  "discount_tax": "0.00",
+  "discount_total": "0.00",
+  "dodatki_do_pizzy": {
+    "dodatki_do_pizzy_popup": "",
+    "dodatki_do_sniadan": "",
+    "info_zamowienia": "",
+    "notatki": "Danie DNIA na miejscu, reszta na wynos"
+  },
+  "fee_lines": [],
+  "id": 2715,
+  "is_editable": false,
+  "line_items": [
+    {
+      "id": 917,
+      "image": {
+        "id": "",
+        "src": ""
+      },
+      "meta_data": [],
+      "name": "Makaron dnia",
+      "parent_name": null,
+      "price": 16.666666666666668,
+      "product_id": 2117,
+      "quantity": 3,
+      "sku": "",
+      "subtotal": "50.00",
+      "subtotal_tax": "4.00",
+      "tax_class": "",
+      "taxes": [
+        {
+          "id": 1,
+          "subtotal": "4",
+          "total": "4"
+        }
+      ],
+      "total": "50.00",
+      "total_tax": "4.00",
+      "variation_id": 0
+    },
+    {
+      "id": 918,
+      "image": {
+        "id": "",
+        "src": ""
+      },
+      "meta_data": [],
+      "name": "Risotto z kurkami",
+      "parent_name": null,
+      "price": 14.814815,
+      "product_id": 1663,
+      "quantity": 1,
+      "sku": "",
+      "subtotal": "14.81",
+      "subtotal_tax": "1.19",
+      "tax_class": "",
+      "taxes": [
+        {
+          "id": 1,
+          "subtotal": "1.185185",
+          "total": "1.185185"
+        }
+      ],
+      "total": "14.81",
+      "total_tax": "1.19",
+      "variation_id": 0
+    },
+    {
+      "id": 919,
+      "image": {
+        "id": "",
+        "src": ""
+      },
+      "meta_data": [],
+      "name": "Danie Dnia",
+      "parent_name": null,
+      "price": 12.962963,
+      "product_id": 2120,
+      "quantity": 1,
+      "sku": "",
+      "subtotal": "12.96",
+      "subtotal_tax": "1.04",
+      "tax_class": "",
+      "taxes": [
+        {
+          "id": 1,
+          "subtotal": "1.037037",
+          "total": "1.037037"
+        }
+      ],
+      "total": "12.96",
+      "total_tax": "1.04",
+      "variation_id": 0
+    }
+  ],
+  "meta_data": [
+    {
+      "id": 33996,
+      "key": "is_vat_exempt",
+      "value": "no"
+    },
+    {
+      "id": 33997,
+      "key": "_thwcfe_ship_to_billing",
+      "value": "1"
+    },
+    {
+      "id": 33998,
+      "key": "_thwcfe_disabled_fields",
+      "value": "nip_do_paragonu"
+    },
+    {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos",
+      "value": "Na wynos"
+    },
+    {
+      "id": 34000,
+      "key": "notatki",
+      "value": "Danie DNIA na miejscu, reszta na wynos"
+    },
+    {
+      "id": 34002,
+      "key": "_payu_order_status",
+      "value": "COMPLETED|CBNP6VTV9Q230919GUEST000P01"
+    }
+  ],
+  "needs_payment": false,
+  "needs_processing": true,
+  "number": "2715",
+  "order_key": "wc_order_oxfKUZZ3Ky9Y3",
+  "parent_id": 0,
+  "payment_method": "payublik",
+  "payment_method_title": "Blik",
+  "payment_url": "https://fabrykasmakow.com.pl/zamowienie/order-pay/2715/?pay_for_order=true\u0026key=wc_order_oxfKUZZ3Ky9Y3",
+  "prices_include_tax": true,
+  "refunds": [],
+  "shipping": {
+    "address_1": "",
+    "address_2": "",
+    "city": "",
+    "company": "",
+    "country": "",
+    "first_name": "",
+    "last_name": "",
+    "phone": "",
+    "postcode": "",
+    "state": ""
+  },
+  "shipping_lines": [],
+  "shipping_tax": "0.00",
+  "shipping_total": "0.00",
+  "status": "processing",
+  "tax_lines": [
+    {
+      "compound": false,
+      "id": 920,
+      "label": "VAT",
+      "meta_data": [],
+      "rate_code": "VAT-1",
+      "rate_id": 1,
+      "rate_percent": 8,
+      "shipping_tax_total": "0.00",
+      "tax_total": "6.23"
+    }
+  ],
+  "total": "84.00",
+  "total_tax": "6.23",
+  "transaction_id": "CBNP6VTV9Q230919GUEST000P01",
+  "version": "8.1.1"
+}

@@ -367,7 +367,7 @@ class OrderManager:
         receipt_order.comments = order['dodatki_do_pizzy']['notatki']
         for item in order['line_items']:
             total_price = float(item['total']) + float(item['total_tax'])
-            receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100), 'szt.'))
+            receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100/item['quantity']), 'szt.'))
         self.printer.print_receipt(receipt_order)
         self.printer.print_internal_order(receipt_order)
 
