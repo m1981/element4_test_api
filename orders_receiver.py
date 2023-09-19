@@ -8,13 +8,11 @@ import sys
 import json
 import base64
 import bleach
-import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 import traceback
 import threading
-import time
 import argparse
 import logging
 import yaml
@@ -85,7 +83,6 @@ class OrderManager:
         self.label_na_miejscu_na_wynos = None
         self.process_status = None
         self.order_being_processed = False
-        self.had_orders = False
 
         self.root = tk.Tk()
         self.root.title("Version: {}".format(str(__version__)))
@@ -193,6 +190,9 @@ class OrderManager:
         self.treeview.heading("3", text="Cena", anchor="w")
 
         self.update_buttons(tk.DISABLED)
+        self.root.after(5000, self.update_order)
+
+
 
     def parse_args(self):
         self.parser = argparse.ArgumentParser(description="Process some integers.")
@@ -201,8 +201,6 @@ class OrderManager:
         self.process_status = self.args.status
 
     def run(self):
-        self.thread = threading.Thread(target=self.periodic_order_update, daemon=True)
-        self.thread.start()
         self.root.mainloop()
 
 
@@ -238,7 +236,6 @@ class OrderManager:
         self.window_in_focus.set(False)  # Indicate that window lost focus
 
     def get_orders(self):
-        print("get_orders -----------------------------------")
         orders = []
         try:
             if self.use_local_files:
@@ -304,111 +301,60 @@ class OrderManager:
         return order["status"] == self.process_status
 
     def order_processing_effects(self, order):
-        print("order_processing_effects-----------------------------------")
         self.show_order(order)
         self.root.attributes('-topmost', True)
-        if not self.had_orders:
-            print("   NOT had_orders")
-            self.root.deiconify()
-            self.root.attributes('-topmost', True)
-            self.had_orders = True
-            print("   had_orders = True")
-        else:
-            print("   ELSE had_orders")
-
-        is_not_in_focus = not self.window_in_focus.get()
-        is_iconic = self.root.state() == 'iconic'
-        if is_not_in_focus or is_iconic:
-            print("   play sound")
+        if not self.window_in_focus.get() or self.root.state() == 'iconic':
             self.play_sound()
-
         self.update_buttons(state=tk.NORMAL)
         self.order_being_processed = True
-        print("   order_being_processed = True")
-        print("END order_processing_effects")
 
     def order_not_processing_effects(self):
-        print("order_not_processing_effects-----------------------------------")
         self.cleanup_ui()
         self.label_no_orders.config(text=self.wait_for_orders_msg)
         self.update_buttons(state=tk.DISABLED)
-        if self.had_orders:
-            self.had_orders = False
-            print("   had_orders = False")
-        else:
-            print("  ELSE had_orders")
-        print("END order_not_processing_effects")
-
-
-    def process_orders(self, orders):
-        for order in orders:
-            if self.is_processing(order):
-                self.order_id = order["id"]
-                self.root.after(0, self.order_processing_effects, order)
-                break
-        else:
-            self.root.after(0, self.order_not_processing_effects)
-
-
-    def periodic_order_update(self):
-        while True:  # This will keep running until the program exits
-            try:
-                self.update_order()
-            except Exception as e:
-                self.handle_exception(e, "Exception during order update")
-            time.sleep(5)
 
     def update_order(self):
-        print("update_order-----------------------------------")
         try:
             if not self.order_being_processed:
-                print("   NOT being_processed")
                 self.order_id = None
-                print("   get_orders *******")
                 orders = self.get_orders()
-                self.process_orders(orders)
+                for order in orders:
+                    if self.is_processing(order):
+                        self.order_id = order["id"]
+                        self.order_processing_effects(order)
+                        break
+                else:
+                    self.order_not_processing_effects()
+                # end for
             else:
-                print("   don't update (order_being_processed)")
                 logger.info(f"Processing. self.order_id: {self.order_id}")
+            self.root.after(5000, self.update_order)  # Sleep for 5 seconds before checking new orders
         except Exception as e:
             self.handle_exception(e)
-
-
 
 
     def show_order(self, order):
         logger.info(f"show_order {order['id']}")
         self.populate_ui(order)
 
-    def check_orders_immediately(self):
-        if not self.order_being_processed:
-            print("immediately")
-            print("schedule 2000")
-            self.root.after(2000, self.update_order)  # Check orders after a small delay
-        else:
-            print("else immediately")
-
     def update_buttons(self, state):
         self.button_accept.config(state=state)
         self.button_reject.config(state=state)
 
-    def handle_order(self, order_id, status):
-        print("handle_order -----------------------------------")
-        self.update_buttons(tk.DISABLED)
-        self.change_order_status(order_id, status)
-        self.cleanup_ui()
-        logger.info(f"   {status.capitalize()} order {order_id}.")
-        self.order_being_processed = False
-        print("   order_being_processed = Fale")
-        self.check_orders_immediately()
-
     def accept_order(self, order_id):
+        self.update_buttons(tk.DISABLED)
         self.print_receipt(self.get_order_by_id(order_id))
-        self.handle_order(order_id, 'completed')
+        self.change_order_status(order_id, 'completed')
+        self.cleanup_ui()
+        logger.info(f"Accepted order {order_id}.")
+        self.order_being_processed = False
 
     def reject_order(self, order_id):
-        self.handle_order(order_id, 'cancelled')
-
+        self.update_buttons(tk.DISABLED)
+        self.change_order_status(order_id, 'cancelled')
+        self.cleanup_ui()
+        logger.info(f"Rejected order {order_id}.")
+        self.order_being_processed = False
 
     def print_receipt(self, order):
         receipt_order = Order()
