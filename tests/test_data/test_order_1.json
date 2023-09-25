@@ -1,0 +1,109 @@
+{
+  "billing": {
+    "czy_chce_nip": "",
+    "first_name": "Magda",
+    "last_name": "",
+    "nip_do_paragonu": "",
+    "phone": "781649758"
+  },
+  "cart_hash": "ba2d965b0c42427662c5c6a7df4c9a73",
+  "cart_tax": "2.37",
+  "customer_note": "",
+  "date_created": "2023-09-25T12:03:24",
+  "dodatki_do_pizzy": {
+    "dodatki_do_pizzy_popup": "",
+    "dodatki_do_sniadan": "",
+    "info_zamowienia": "",
+    "notatki": ""
+  },
+  "id": 2854,
+  "line_items": [
+    {
+      "id": 1172,
+      "name": "Danie Dnia",
+      "price": 12.962963,
+      "product_id": 2120,
+      "quantity": 1,
+      "subtotal": "12.96",
+      "subtotal_tax": "1.04",
+      "taxes": [
+        {
+          "id": 1,
+          "subtotal": "1.037037",
+          "total": "1.037037"
+        }
+      ],
+      "total": "12.96",
+      "total_tax": "1.04",
+      "variation_id": 0
+    },
+    {
+      "id": 1173,
+      "name": "Makaron dnia",
+      "price": 16.666667,
+      "product_id": 2117,
+      "quantity": 1,
+      "subtotal": "16.67",
+      "subtotal_tax": "1.33",
+      "taxes": [
+        {
+          "id": 1,
+          "subtotal": "1.333333",
+          "total": "1.333333"
+        }
+      ],
+      "total": "16.67",
+      "total_tax": "1.33",
+      "variation_id": 0
+    }
+  ],
+  "meta_data": [
+    {
+      "id": 37759,
+      "key": "is_vat_exempt",
+      "value": "no"
+    },
+    {
+      "id": 37760,
+      "key": "_thwcfe_ship_to_billing",
+      "value": "1"
+    },
+    {
+      "id": 37761,
+      "key": "_thwcfe_disabled_fields",
+      "value": "nip_do_paragonu"
+    },
+    {
+      "id": 37763,
+      "key": "na_miejscu_na_wynos",
+      "value": "Na miejscu"
+    },
+    {
+      "id": 37764,
+      "key": "na_miejscu_na_wynos_2",
+      "value": "Na wynos"
+    },
+    {
+      "id": 37766,
+      "key": "_payu_order_status",
+      "value": "COMPLETED|2GXV68BG57230925GUEST000P01"
+    }
+  ],
+  "needs_payment": false,
+  "needs_processing": true,
+  "number": "2854",
+  "order_key": "wc_order_cyXpBn7iZMq8P",
+  "status": "processing",
+  "tax_lines": [
+    {
+      "compound": false,
+      "id": 1174,
+      "label": "VAT",
+      "rate_id": 1,
+      "rate_percent": 8,
+      "tax_total": "2.37"
+    }
+  ],
+  "total": "32.00",
+  "total_tax": "2.37"
+}
