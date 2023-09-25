@@ -380,36 +380,47 @@ class OrderManager:
 
     def populate_ui(self, order_dto):
         try:
-            self.label_order.config(text=f"{order_dto.order_id}")
-            self.label_date.config(text=self.convert_date(datetime.strptime(order_dto.date_created[:-1], "%Y-%m-%dT%H:%M:%S")))
-            self.label_nip.config(text=f"{order_dto.billing['nip_do_paragonu']}")
-            self.label_phone.config(text=f"{order_dto.billing['phone']}")
-            self.label_na_miejscu_na_wynos.config(text=order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else "")
-
-            comments = order_dto.dodatki_do_pizzy['notatki']
-            self.label_comments.configure(state="normal")
-            self.label_comments.delete("1.0", "end")
-            self.label_comments.insert("1.0", comments)
-            self.label_comments.configure(state="disable")
-            self.label_no_orders.config(text="")
-            self.treeview.delete(*self.treeview.get_children())
-
-            if self.use_local_files:
-                self.local_orders_label.config(text="Testing: Local orders")
-            else:
-                self.local_orders_label.config(text="")
-
-            if self.use_local_printer:
-                self.console_printer_label.config(text="Testing: Console printer")
-            else:
-                self.console_printer_label.config(text="")
-
-            for item_dto in order_dto.line_items:
-                price = float(item_dto.total) + float(item_dto.total_tax)
-                formatted_price = '{:.2f} PLN'.format(price)
-                self.treeview.insert("", 'end', values=(item_dto.item_name, item_dto.quantity, formatted_price))
+            self.configure_labels(order_dto)
+            self.configure_testing_labels()
+            self.populate_treeview(order_dto)
         except Exception as e:
             self.handle_exception(e)
+
+    def configure_labels(self, order_dto):
+        self.label_order.config(text=f"{order_dto.order_id}")
+        self.label_date.config(text=self.convert_date(datetime.strptime(order_dto.date_created[:-1], "%Y-%m-%dT%H:%M:%S")))
+        self.label_nip.config(text=f"{order_dto.billing['nip_do_paragonu']}")
+        self.label_phone.config(text=f"{order_dto.billing['phone']}")
+
+        self.label_na_miejscu_na_wynos.config(text=order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else "")
+        comments = order_dto.dodatki_do_pizzy['notatki']
+        self.update_comments_label(comments)
+        self.label_no_orders.config(text="")
+
+    def configure_testing_labels(self):
+        if self.use_local_files:
+            self.local_orders_label.config(text="Testing: Local orders")
+        else:
+            self.local_orders_label.config(text="")
+
+        if self.use_local_printer:
+            self.console_printer_label.config(text="Testing: Console printer")
+        else:
+            self.console_printer_label.config(text="")
+
+    def update_comments_label(self, comments):
+        self.label_comments.configure(state="normal")
+        self.label_comments.delete("1.0", "end")
+        self.label_comments.insert("1.0", comments)
+        self.label_comments.configure(state="disable")
+
+    def populate_treeview(self, order_dto):
+        self.treeview.delete(*self.treeview.get_children())
+        for item_dto in order_dto.line_items:
+            price = float(item_dto.total) + float(item_dto.total_tax)
+            formatted_price = '{:.2f} PLN'.format(price)
+            self.treeview.insert("", 'end', values=(item_dto.item_name, item_dto.quantity, formatted_price))
+
 
 
 
