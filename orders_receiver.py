@@ -361,21 +361,22 @@ class OrderManager:
         logger.info(f"Rejected order {order_id}.")
         self.order_being_processed = False
 
-    def print_receipt(self, order):
+    def print_receipt(self, order_dto):
         receipt_order = Order()
         vat_id = 2
-        receipt_order.NIP = order['billing']['nip_do_paragonu']
-        receipt_order.order_id = order['id']
-        receipt_order.date_created = datetime.strptime(order['date_created'], "%Y-%m-%dT%H:%M:%S")
-        receipt_order.phone_number = order['billing']['phone']
-        receipt_order.na_miejscu_na_wynos = order['billing']['na_miejscu_na_wynos']
-        receipt_order.comments = order['dodatki_do_pizzy']['notatki']
-        for item in order['line_items']:
-            total_price = float(item['total']) + float(item['total_tax'])
-            receipt_order.add_item(ReceiptItem(item['name'], item['quantity']*100, vat_id, int((float(item['total']) + float(item['total_tax']))*100/item['quantity']), 'szt.'))
+        receipt_order.NIP = order_dto.billing['nip_do_paragonu']
+        receipt_order.order_id = order_dto.order_id
+        receipt_order.date_created = datetime.strptime(order_dto.date_created, "%Y-%m-%dT%H:%M:%S")
+        receipt_order.phone_number = order_dto.billing['phone']
+        receipt_order.na_miejscu_na_wynos = order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else ""
+        receipt_order.comments = order_dto.dodatki_do_pizzy['notatki']
+
+        for item_dto in order_dto.line_items:
+            total_price = float(item_dto.total) + float(item_dto.total_tax)
+            receipt_order.add_item(ReceiptItem(item_dto.item_name, item_dto.quantity*100, vat_id, int(total_price*100/item_dto.quantity), 'szt.'))
+
         self.printer.print_receipt(receipt_order)
         self.printer.print_internal_order(receipt_order)
-
 
     def populate_ui(self, order_dto):
         try:
