@@ -23,6 +23,8 @@ from version import __version__
 
 from modules.order_data_transformer import OrderDataTransformer
 from modules.treeview_data_formatter import TreeViewDataFormatter
+from modules.receipt_data_formatter import ReceiptDataFormatter
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -351,7 +353,8 @@ class OrderManager:
 
     def accept_order(self, order_id):
         self.update_buttons(tk.DISABLED)
-        self.print_receipt(self.get_order_by_id(order_id))
+        receipt_data = ReceiptDataFormatter.format_data(self.get_order_by_id(order_id))
+        self.print_receipt(receipt_data, self.printer)
         self.change_order_status(order_id, 'completed')
         self.cleanup_ui()
         logger.info(f"Accepted order {order_id}.")
@@ -364,22 +367,14 @@ class OrderManager:
         logger.info(f"Rejected order {order_id}.")
         self.order_being_processed = False
 
-    def print_receipt(self, order_dto):
-        receipt_order = Order()
-        vat_id = 2
-        receipt_order.NIP = order_dto.billing['nip_do_paragonu']
-        receipt_order.order_id = order_dto.order_id
-        receipt_order.date_created = datetime.strptime(order_dto.date_created, "%Y-%m-%dT%H:%M:%S")
-        receipt_order.phone_number = order_dto.billing['phone']
-        receipt_order.na_miejscu_na_wynos = order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else ""
-        receipt_order.comments = order_dto.dodatki_do_pizzy['notatki']
 
-        for item_dto in order_dto.line_items:
-            total_price = float(item_dto.total) + float(item_dto.total_tax)
-            receipt_order.add_item(ReceiptItem(item_dto.item_name, item_dto.quantity*100, vat_id, int(total_price*100), 'szt.'))
 
-        self.printer.print_receipt(receipt_order)
-        self.printer.print_internal_order(receipt_order)
+    def print_receipt(self, receipt_order, printer):
+        try:
+            printer.print_receipt(receipt_order)
+            printer.print_internal_order(receipt_order)
+        except Exception as e:
+            self.handle_exception(e)
 
     def populate_ui(self, order_dto):
         try:
