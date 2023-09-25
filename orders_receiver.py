@@ -22,7 +22,7 @@ from receipt import Order, ReceiptItem, Printer, elzabdr
 from version import __version__
 
 from modules.order_data_transformer import OrderDataTransformer
-
+from modules.treeview_data_formatter import TreeViewDataFormatter
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -50,6 +50,9 @@ logger.addHandler(handler_console)
 
 class OrderManager:
     def __init__(self):
+        pass
+
+    def init(self):
         logger.info("")
         logger.info("----------------------------------------")
         logger.info("----------------------------------------")
@@ -414,14 +417,12 @@ class OrderManager:
         self.label_comments.insert("1.0", comments)
         self.label_comments.configure(state="disable")
 
+
     def populate_treeview(self, order_dto):
         self.treeview.delete(*self.treeview.get_children())
-        for item_dto in order_dto.line_items:
-            price = float(item_dto.total) + float(item_dto.total_tax)
-            formatted_price = '{:.2f} PLN'.format(price)
-            self.treeview.insert("", 'end', values=(item_dto.item_name, item_dto.quantity, formatted_price))
-
-
+        formatted_data = TreeViewDataFormatter.format_data_for_display(order_dto)
+        for data in formatted_data:
+            self.treeview.insert("", 'end', values=data)
 
 
     def cleanup_ui(self):
@@ -458,5 +459,6 @@ class OrderManager:
 
 if __name__=="__main__":
   manager = OrderManager()
+  manager.init()
   manager.parse_args()
   manager.run()
