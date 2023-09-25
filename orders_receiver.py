@@ -21,6 +21,8 @@ from logging.handlers import TimedRotatingFileHandler
 from receipt import Order, ReceiptItem, Printer, elzabdr
 from version import __version__
 
+from modules.order_data_transformer import OrderDataTransformer
+
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -236,10 +238,10 @@ class OrderManager:
         self.window_in_focus.set(False)  # Indicate that window lost focus
 
     def get_orders(self):
-        orders = []
+        raw_orders = []
         try:
             if self.use_local_files:
-                orders = self.get_local_orders(self.local_files_path)
+                raw_orders = self.get_local_orders(self.local_files_path)
             else:
                 base64_encoded_data = base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
                 response = requests.get(
@@ -249,14 +251,13 @@ class OrderManager:
                 )
                 response.encoding = 'utf-8'
                 response.raise_for_status() # Raise exception if status code indicates an HTTP error
-                orders = [self.clean_recursive(order) for order in response.json()]
+                raw_orders = [self.clean_recursive(order) for order in response.json()]
 
         except Exception as e:
             self.handle_exception(e)
 
+        orders = [OrderDataTransformer.transform_to_order_dto(order) for order in raw_orders]
         orders.reverse()
-        for order in orders:
-            logger.info(f"Fetched: id: {order['id']}, status: {order['status']}")
         return orders
 
     def change_order_status(self, order_id, new_status):
@@ -274,9 +275,10 @@ class OrderManager:
             r.raise_for_status()
 
     def get_order_by_id(self, order_id):
+        raw_order = None
         if self.use_local_files:
             with open(os.path.join(self.local_files_path, f'order_{order_id}.json'), encoding='utf-8') as f:
-                return json.load(f)
+                raw_order = json.load(f)
         else:
             base64_encoded_data =  base64.b64encode(f"{self.client_key}:{self.client_secret}".encode("windows-1250")).decode("windows-1250")
             response = requests.get(
@@ -284,7 +286,10 @@ class OrderManager:
                 headers={"Authorization": f"Basic {base64_encoded_data}"},
                 proxies=self.proxies,
             )
-            return response.json()
+            raw_order = response.json()
+        order = OrderDataTransformer.transform_to_order_dto(raw_order)
+        return order
+
 
     def get_local_orders(self, path):
         orders = []
@@ -298,7 +303,7 @@ class OrderManager:
 
     def is_processing(self, order):
         assert self.process_status
-        return order["status"] == self.process_status
+        return order.status == self.process_status
 
     def order_processing_effects(self, order):
         self.show_order(order)
@@ -320,7 +325,7 @@ class OrderManager:
                 orders = self.get_orders()
                 for order in orders:
                     if self.is_processing(order):
-                        self.order_id = order["id"]
+                        self.order_id = order.order_id
                         self.order_processing_effects(order)
                         break
                 else:
@@ -334,7 +339,7 @@ class OrderManager:
 
 
     def show_order(self, order):
-        logger.info(f"show_order {order['id']}")
+        logger.info(f"show_order {order.order_id}")
         self.populate_ui(order)
 
     def update_buttons(self, state):
@@ -372,23 +377,22 @@ class OrderManager:
         self.printer.print_internal_order(receipt_order)
 
 
-    def populate_ui(self, order):
+    def populate_ui(self, order_dto):
         try:
-            self.label_order.config(text = f"{self.order_id}")
-            self.label_date.config(text = self.convert_date(datetime.strptime(order['date_created'][:-1], "%Y-%m-%dT%H:%M:%S")))
-            self.label_nip.config(text = f"{order['billing']['nip_do_paragonu']}")
-            self.label_phone.config(text = f"{order['billing']['phone']}")
-            self.label_na_miejscu_na_wynos.config(text = f"{order['billing']['na_miejscu_na_wynos']}")
-            comments = order['dodatki_do_pizzy']['notatki']
+            self.label_order.config(text=f"{order_dto.order_id}")
+            self.label_date.config(text=self.convert_date(datetime.strptime(order_dto.date_created[:-1], "%Y-%m-%dT%H:%M:%S")))
+            self.label_nip.config(text=f"{order_dto.billing['nip_do_paragonu']}")
+            self.label_phone.config(text=f"{order_dto.billing['phone']}")
+            self.label_na_miejscu_na_wynos.config(text=order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else "")
 
-            comments = order['dodatki_do_pizzy']['notatki']
-            self.label_comments.configure(state="normal")  # make it editable
-            self.label_comments.delete("1.0", "end")  # delete the existing text
-            self.label_comments.insert("1.0", comments)  # insert the new text
-            self.label_comments.configure(state="disable")  # make it read-only again
+            comments = order_dto.dodatki_do_pizzy['notatki']
+            self.label_comments.configure(state="normal")
+            self.label_comments.delete("1.0", "end")
+            self.label_comments.insert("1.0", comments)
+            self.label_comments.configure(state="disable")
             self.label_no_orders.config(text="")
-            # Clear Treeview
             self.treeview.delete(*self.treeview.get_children())
+
             if self.use_local_files:
                 self.local_orders_label.config(text="Testing: Local orders")
             else:
@@ -399,12 +403,13 @@ class OrderManager:
             else:
                 self.console_printer_label.config(text="")
 
-            for item in order['line_items']:
-                price = float(item['total']) + float(item['total_tax'])
+            for item_dto in order_dto.line_items:
+                price = float(item_dto.total) + float(item_dto.total_tax)
                 formatted_price = '{:.2f} PLN'.format(price)
-                self.treeview.insert("", 'end', values=(item['name'], item['quantity'], formatted_price))
+                self.treeview.insert("", 'end', values=(item_dto.item_name, item_dto.quantity, formatted_price))
         except Exception as e:
             self.handle_exception(e)
+
 
 
     def cleanup_ui(self):
