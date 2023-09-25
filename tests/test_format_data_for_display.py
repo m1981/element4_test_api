@@ -20,6 +20,25 @@ class TestFormatDataForDisplay(unittest.TestCase):
         # Check result
         expected_result = [
             ('Test Product 1', 1, '11.00 PLN'),
-            ('Test Product 2', 2, '22.00 PLN')
+            ('Test Product 2', 2, '44.00 PLN')
+        ]
+        self.assertEqual(result, expected_result)
+
+
+    def test_format_data_for_display2(self):
+        # Prepare data for the test
+        line_item_1 = LineItemDto("Makaron dnia", 3, 16.666666666666668, 1.3333, False, "Na miejscu")
+        line_item_2 = LineItemDto("Risotto z kurkami", 1, 14.814815, 1.19, False, "Na wynos")
+        line_item_3 = LineItemDto("Danie Dnia", 1, 12.962963, 1.04, False, "Na wynos")
+        order_dto = OrderDto(2715, "processing", {}, [line_item_1, line_item_2, line_item_3], "", "Danie DNIA na miejscu, reszta na wynos")
+
+        # Method under test
+        result = TreeViewDataFormatter.format_data_for_display(order_dto)
+
+        # Check result
+        expected_result = [
+            ('Makaron dnia', 3, '54.00 PLN'),
+            ('Risotto z kurkami', 1, '16.00 PLN'),
+            ('Danie Dnia', 1, '14.00 PLN'),
         ]
         self.assertEqual(result, expected_result)
