@@ -98,8 +98,8 @@ class TestOrderDataTransformer:
             assert isinstance(line_item, LineItemDto)
             assert line_item.item_name == order_data['line_items'][index]['name']
             assert line_item.quantity == order_data['line_items'][index]['quantity']
-            assert line_item.total == float(order_data['line_items'][index]['total'])
-            assert line_item.total_tax == float(order_data['line_items'][index]['total_tax'])
+            assert line_item.total == float(order_data['line_items'][index]['total'])/line_item.quantity
+            assert line_item.total_tax == float(order_data['line_items'][index]['total_tax'])/line_item.quantity
             assert line_item.is_vat_exempt == (order_data['meta_data'][0]['value'] == "yes")
             assert line_item.na_miejscu_na_wynos == order_data['meta_data'][index + 1]['value']
 

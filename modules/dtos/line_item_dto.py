@@ -6,3 +6,13 @@ class LineItemDto:
         self.total_tax = total_tax
         self.is_vat_exempt = is_vat_exempt
         self.na_miejscu_na_wynos = na_miejscu_na_wynos
+
+
+    def __str__(self):
+        return (
+            f"\tItem Name: {self.item_name}\n"
+            f"\tQuantity: {self.quantity}\n"
+            f"\tTotal: {self.total}\n"
+            f"\tTotal Tax: {self.total_tax}\n"
+            f"\tOrder Type: {self.na_miejscu_na_wynos}"
+        )

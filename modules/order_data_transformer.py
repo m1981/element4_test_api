@@ -22,8 +22,8 @@ class OrderDataTransformer:
             line_item_dto = LineItemDto(
                 item['name'],
                 item['quantity'],
-                float(item['total']),
-                float(item['total_tax']),
+                float(item['total'])/item['quantity'],
+                float(item['total_tax'])/item['quantity'],
                 is_vat_exempt,
                 na_miejscu_na_wynos.get(index)
             )

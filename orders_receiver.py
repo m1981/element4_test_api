@@ -376,7 +376,7 @@ class OrderManager:
 
         for item_dto in order_dto.line_items:
             total_price = float(item_dto.total) + float(item_dto.total_tax)
-            receipt_order.add_item(ReceiptItem(item_dto.item_name, item_dto.quantity*100, vat_id, int(total_price*100/item_dto.quantity), 'szt.'))
+            receipt_order.add_item(ReceiptItem(item_dto.item_name, item_dto.quantity*100, vat_id, int(total_price*100), 'szt.'))
 
         self.printer.print_receipt(receipt_order)
         self.printer.print_internal_order(receipt_order)
