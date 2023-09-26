@@ -7,13 +7,11 @@ class TestOrderDataTransformer:
     def test_extract_metadata(self):
         transformer = OrderDataTransformer()
         input_data = [
-            {"key": "is_vat_exempt", "value": "yes"},
             {"key": "na_miejscu_na_wynos", "value": "Na miejscu"},
             {"key": "na_miejscu_na_wynos_2", "value": "Na wynos"},
         ]
-        got_is_vat_exempt, got_na_miejscu_na_wynos = transformer.extract_metadata(input_data)
+        got_na_miejscu_na_wynos = transformer.extract_metadata(input_data)
 
-        assert got_is_vat_exempt == True
         assert got_na_miejscu_na_wynos == {1: 'Na miejscu', 2: 'Na wynos'}
 
 
@@ -100,6 +98,5 @@ class TestOrderDataTransformer:
             assert line_item.quantity == order_data['line_items'][index]['quantity']
             assert line_item.total == float(order_data['line_items'][index]['total'])/line_item.quantity
             assert line_item.total_tax == float(order_data['line_items'][index]['total_tax'])/line_item.quantity
-            assert line_item.is_vat_exempt == (order_data['meta_data'][0]['value'] == "yes")
             assert line_item.na_miejscu_na_wynos == order_data['meta_data'][index + 1]['value']
 
