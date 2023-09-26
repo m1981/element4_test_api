@@ -15,19 +15,19 @@ class TestOrderDataTransformerJson(unittest.TestCase):
     def test_extract_metadata(self):
         # Apply the extraction method to the test data and assert the expected results
         na_miejscu_na_wynos_1 = OrderDataTransformer.extract_metadata(self.order_1['meta_data'])
-        self.assertEqual(na_miejscu_na_wynos_1, {1: 'Na miejscu', 2: 'Na wynos'})
+        self.assertEqual(na_miejscu_na_wynos_1, ['Na miejscu', 'Na wynos'])
 
     def test_extract_metadata_2715(self):
         na_miejscu_na_wynos_2 = OrderDataTransformer.extract_metadata(self.order_2715['meta_data'])
         self.assertEqual(na_miejscu_na_wynos_2,
-        {1: 'Na wynos', 2: 'Na wynos', 3: 'Na wynos', 4: 'Na wynos', 5: 'Na miejscu'})
+        ['Na wynos', 'Na wynos', 'Na miejscu', 'Na wynos', 'Na miejscu'])
     #
-    def test_transform_to_order_dto_2715(self):
+    def test_wynos_per_instance_in_line_item_2715(self):
         # Apply the transformation method to the test data and assert the expected results.
         order_dto = OrderDataTransformer.transform_to_order_dto(self.order_2715)
-        self.assertEqual(order_dto.line_items[0].na_miejscu_na_wynos, 'Na wynos')
-        self.assertEqual(order_dto.line_items[1].na_miejscu_na_wynos, 'Na wynos')
-        self.assertEqual(order_dto.line_items[2].na_miejscu_na_wynos, 'Na miejscu')
+        self.assertEqual(order_dto.line_items[0].na_miejscu_na_wynos, ['Na wynos', 'Na wynos', 'Na miejscu'])
+        self.assertEqual(order_dto.line_items[1].na_miejscu_na_wynos, ['Na wynos'])
+        self.assertEqual(order_dto.line_items[2].na_miejscu_na_wynos, ['Na miejscu'])
 
 if __name__ == '__main__':
     unittest.main()
