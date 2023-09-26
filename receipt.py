@@ -34,9 +34,20 @@ elzabdr.pNonFiscalPrintoutLine.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes
 elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
 
+class PrintException(Exception):
+    pass
 
 
 class Printer:
+    BEGIN_PRINTOUT = 53
+    LINE_ITEM = 40
+    PHONE_NUMBER = 21
+    TELEFON_FIELD = 11
+    ORDER_DETAILS = 1
+    EMPTY_LINE = 10
+    NEW_LINE = 1
+    NO_NEW_LINE = 0
+
     def __init__(self, elzabdr, port, speed, timeout, local):
         self.elzabdr = elzabdr
         self.port = port
@@ -65,37 +76,38 @@ class Printer:
                 if self.elzabdr.CommunicationEnd() != 0:
                     raise Exception('Cannot end printer communication')
 
-    def print_internal_order(self, order):
+
+
+    def print_internal_order(self, order, elzabdr, W=ctypes.c_int(), OpisBledu=ctypes.create_string_buffer(255)):
         if self.local:
             self.local_print_internal_order(order)
         else:
             try:
-                W = ctypes.c_int()
-                OpisBledu = ctypes.create_string_buffer(255)
-                if self.elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
-                    raise Exception('Cannot init printer')
-
-                self.elzabdr.NonFiscalPrintoutBegin(53)
-                self.elzabdr.pNonFiscalPrintoutLine(10, b"", 0)
-
-                for item in order.items:
-                    self.elzabdr.pNonFiscalPrintoutLine(40, item.name.encode('windows-1250'), 1)
-                    self.elzabdr.pNonFiscalPrintoutLine(40, str(item.amount/100).encode('windows-1250'), 1)
-
-                # todo Zapisz zamownienie do pliku
-                # todo Zwieksz numer zamowienia
-                message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
-                self.elzabdr.pNonFiscalPrintoutLine(1, message.encode('windows-1250'), 1)
-                self.elzabdr.pNonFiscalPrintoutLine(1, str(order.comments).encode('windows-1250'), 1)
-                self.elzabdr.pNonFiscalPrintoutLine(1, str(order.na_miejscu_na_wynos).encode('windows-1250'), 1)
-                self.elzabdr.pNonFiscalPrintoutLine(11, b"Telefon", 1)
-                # Print EAN code
-                self.elzabdr.pNonFiscalPrintoutLine(21, str(order.phone_number).encode('windows-1250'), 1);
-                #
-                self.elzabdr.NonFiscalPrintoutEnd()
-                wynik = self.elzabdr.CommunicationEnd()
+                if elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
+                    raise PrintException("Cannot init printer")
+                elzabdr.NonFiscalPrintoutBegin(self.BEGIN_PRINTOUT )
+                elzabdr.pNonFiscalPrintoutLine(self.EMPTY_LINE , b"", self.NO_NEW_LINE)
+                self.print_order_items(order, elzabdr)
+                self.print_order_details(order, elzabdr)
+                elzabdr.NonFiscalPrintoutEnd()
+                wynik = elzabdr.CommunicationEnd()
+            except Exception as e:
+                self.handle_exception(e)
             finally:
-              self.elzabdr.CommunicationEnd()
+                elzabdr.CommunicationEnd()
+
+    def print_order_items(self, order, elzabdr):
+        for item in order.items:
+            elzabdr.pNonFiscalPrintoutLine(self.LINE_ITEM, item.name.encode('windows-1250'), self.NEW_LINE)
+            elzabdr.pNonFiscalPrintoutLine(self.LINE_ITEM, str(item.amount/100).encode('windows-1250'), self.NEW_LINE)
+
+    def print_order_details(self, order, elzabdr):
+        message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
+        elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, message.encode('windows-1250'), self.NEW_LINE)
+        elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, str(order.comments).encode('windows-1250'), self.NEW_LINE)
+        elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, str(order.na_miejscu_na_wynos).encode('windows-1250'), self.NEW_LINE)
+        elzabdr.pNonFiscalPrintoutLine(self.TELEFON_FIELD, b"Telefon", self.NEW_LINE)
+        elzabdr.pNonFiscalPrintoutLine(self.PHONE_NUMBER, str(order.phone_number).encode('windows-1250'), self.NEW_LINE)
 
     def local_print_receipt(self, order):
         print('--- Receipt ---')
