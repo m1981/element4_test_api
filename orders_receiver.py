@@ -87,7 +87,6 @@ class OrderManager:
         self.label_phone = None
         self.label_nip = None
         self.label_comments = None
-        self.label_na_miejscu_na_wynos = None
         self.process_status = None
         self.order_being_processed = False
 
@@ -146,15 +145,10 @@ class OrderManager:
         self.label_phone = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
         self.label_phone.grid(row=2, column=1, sticky='w')
 
-        nmnw_label = tk.Label(frame_labels, text="Gdzie:", font = self.label_font, anchor='e')
-        nmnw_label.grid(row=3, column=0, sticky='e', pady=(50, 0))
-        self.label_na_miejscu_na_wynos = tk.Label(frame_labels, text="", font = self.default_font, anchor='w')
-        self.label_na_miejscu_na_wynos.grid(row=3, column=1, sticky='w', pady=(50, 0))
-
         comments_label = tk.Label(frame_labels, text="Komentarz:", font = self.label_font, anchor='e')
-        comments_label.grid(row=4, column=0, sticky='e')
+        comments_label.grid(row=3, column=0, sticky='e')
         self.label_comments = tk.Text(frame_labels, height=4, width=20, wrap='word', font=self.default_font)
-        self.label_comments.grid(row=4, column=1, sticky='w')
+        self.label_comments.grid(row=3, column=1, sticky='w')
         self.label_comments.insert(1.0, "")  # add some text
         self.label_comments.configure(state="disable")  # make it read-only
 
@@ -187,14 +181,16 @@ class OrderManager:
 
 
         self.treeview.pack(fill='both', expand=True)
-        self.treeview["columns"]=("1","2","3")
+        self.treeview["columns"]=("1","2","3","4")
         self.treeview['show'] = 'headings'
-        self.treeview.column("1", width=350)
+        self.treeview.column("1", width=250)
         self.treeview.column("2", width=50)
-        self.treeview.column("3", width=100)
+        self.treeview.column("3", width=50)
+        self.treeview.column("4", width=50)
         self.treeview.heading("1", text="Danie", anchor="w")
         self.treeview.heading("2", text="Ilość", anchor="w")
-        self.treeview.heading("3", text="Cena", anchor="w")
+        self.treeview.heading("3", text="Gdzie", anchor="w")
+        self.treeview.heading("4", text="Cena", anchor="w")
 
         self.update_buttons(tk.DISABLED)
         self.root.after(5000, self.update_order)
@@ -390,7 +386,6 @@ class OrderManager:
         self.label_nip.config(text=f"{order_dto.billing['nip_do_paragonu']}")
         self.label_phone.config(text=f"{order_dto.billing['phone']}")
 
-        self.label_na_miejscu_na_wynos.config(text=order_dto.line_items[0].na_miejscu_na_wynos if order_dto.line_items else "")
         comments = order_dto.dodatki_do_pizzy['notatki']
         self.update_comments_label(comments)
         self.label_no_orders.config(text="")
@@ -427,7 +422,6 @@ class OrderManager:
         self.label_date.config(text = "")
         self.label_nip.config(text="")
         self.label_phone.config(text="")
-        self.label_na_miejscu_na_wynos.config(text="")
         self.label_comments.configure(state="normal")
         self.label_comments.delete("1.0", "end")
         # Clear Treeview

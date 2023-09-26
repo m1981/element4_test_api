@@ -8,5 +8,5 @@ class TreeViewDataFormatter:
         for item_dto in order_dto.line_items:
             price = (float(item_dto.total) + float(item_dto.total_tax)) * item_dto.quantity
             formatted_price = '{:.2f} PLN'.format(price)
-            formatted_data.append((item_dto.item_name, item_dto.quantity, formatted_price))
+            formatted_data.append((item_dto.item_name, item_dto.quantity, item_dto.na_miejscu_na_wynos, formatted_price))
         return formatted_data
