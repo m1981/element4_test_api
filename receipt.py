@@ -80,20 +80,20 @@ class Printer:
 
     def print_internal_order(self, order, elzabdr, W=ctypes.c_int(), OpisBledu=ctypes.create_string_buffer(255)):
         if self.local:
-            self.local_print_internal_order(order)
-        else:
-            try:
-                if elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
-                    raise PrintException("Cannot init printer")
-                elzabdr.NonFiscalPrintoutBegin(self.BEGIN_PRINTOUT )
-                elzabdr.pNonFiscalPrintoutLine(self.EMPTY_LINE , b"", self.NO_NEW_LINE)
-                self.print_order_items(order, elzabdr)
-                self.print_order_details(order, elzabdr)
-                elzabdr.NonFiscalPrintoutEnd()
-                wynik = elzabdr.CommunicationEnd()
-            except Exception as e:
-                self.handle_exception(e)
-            finally:
+            elzabdr = MockPrinter()
+
+        try:
+            if elzabdr.CommunicationInit(self.port, self.speed, self.timeout) != 0:
+                raise PrintException("Cannot init printer")
+            elzabdr.NonFiscalPrintoutBegin(self.BEGIN_PRINTOUT )
+            elzabdr.pNonFiscalPrintoutLine(self.EMPTY_LINE , b"", self.NO_NEW_LINE)
+            self.print_order_items(order, elzabdr)
+            self.print_order_details(order, elzabdr)
+            elzabdr.NonFiscalPrintoutEnd()
+            wynik = elzabdr.CommunicationEnd()
+        except Exception as e:
+            self.handle_exception(e)
+        finally:
                 elzabdr.CommunicationEnd()
 
     def print_order_items(self, order, elzabdr):
@@ -118,13 +118,22 @@ class Printer:
             print(item.name, item.vat_rate, 0, item.amount, 2,item.measurement_unit, item.price)
         print('\n')
 
-    def local_print_internal_order(self, order):
-        print('--- Internal ---')
-        print('Zamowienie: ', order.order_id)
-        print('Data online: ', order.date_created.strftime("%d-%m %H:%M"))
-        for item in order.items:
-            print(item.name, item.amount/100)
-        print(order.na_miejscu_na_wynos)
-        print('Komentarz: ', order.comments)
-        print('Telefon: ', order.phone_number)
-        print('--- End of Receipt ---')
+
+class MockPrinter:
+    def __init__(self):
+        pass
+
+    def pNonFiscalPrintoutLine(self, arg1, arg2, arg3):
+        print(f"{arg1}\t{arg2.decode('windows-1250')}")
+
+    def CommunicationInit(self, port, speed, timeout):
+        return 0
+
+    def NonFiscalPrintoutBegin(self, param):
+        pass
+
+    def NonFiscalPrintoutEnd(self):
+        pass
+
+    def CommunicationEnd(self):
+        pass

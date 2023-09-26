@@ -368,7 +368,7 @@ class OrderManager:
     def print_receipt(self, receipt_order, printer):
         try:
             printer.print_receipt(receipt_order)
-            printer.print_internal_order(receipt_order)
+            printer.print_internal_order(receipt_order, printer)
         except Exception as e:
             self.handle_exception(e)
 
