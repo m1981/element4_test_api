@@ -188,9 +188,9 @@ class OrderManager:
         self.treeview.pack(fill='both', expand=True)
         self.treeview["columns"]=("1","2","3","4")
         self.treeview['show'] = 'headings'
-        self.treeview.column("1", width=250)
-        self.treeview.column("2", width=50)
-        self.treeview.column("3", width=50)
+        self.treeview.column("1", width=150)
+        self.treeview.column("2", width=10)
+        self.treeview.column("3", width=120)
         self.treeview.column("4", width=50)
         self.treeview.heading("1", text="Danie", anchor="w")
         self.treeview.heading("2", text="Ilość", anchor="w")
