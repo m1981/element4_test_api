@@ -1,37 +1,6 @@
 import ctypes
-from modules.receipt_item import ReceiptItem, Order
-elzabdr = ctypes.CDLL('./elzabdr.dll')
+from modules.mock_printer import MockPrinter
 
-
-# Declare function arguments and types
-elzabdr.CommunicationInit.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
-elzabdr.CommunicationInit.restype = ctypes.c_int
-
-elzabdr.pFillLines.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
-elzabdr.pFillLines.restype = ctypes.c_int
-
-elzabdr.pFillPayment.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_int]
-elzabdr.pFillPayment.restype = ctypes.c_int
-
-elzabdr.ReceiptBegin.restype = ctypes.c_int
-
-elzabdr.PackageItem.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-elzabdr.PackageItem.restype = ctypes.c_int
-
-elzabdr.pReceiptItemEx.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                                   ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
-elzabdr.pReceiptItemEx.restype = ctypes.c_int
-
-elzabdr.ReceiptEnd.argtypes = [ctypes.c_int]
-elzabdr.ReceiptEnd.restype = ctypes.c_int
-
-elzabdr.CommunicationEnd.restype = ctypes.c_int
-
-elzabdr.pErrMessage.argtypes = [ctypes.c_int, ctypes.c_char_p]
-elzabdr.pErrMessage.restype = ctypes.c_int
-
-elzabdr.pNonFiscalPrintoutLine.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
-elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
 
 class PrintException(Exception):
@@ -48,12 +17,43 @@ class Printer:
     NEW_LINE = 1
     NO_NEW_LINE = 0
 
-    def __init__(self, elzabdr, port, speed, timeout, local):
+    def __init__(self, elzabdr, port, speed, timeout, local, init_dll=True):
         self.elzabdr = elzabdr
         self.port = port
         self.speed = speed
         self.timeout = timeout
         self.local = local
+
+    def initilize_dll(self):
+        # Declare function arguments and types
+        self.elzabdr.CommunicationInit.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int]
+        self.elzabdr.CommunicationInit.restype = ctypes.c_int
+
+        self.elzabdr.pFillLines.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.POINTER(ctypes.c_int)]
+        self.elzabdr.pFillLines.restype = ctypes.c_int
+
+        self.elzabdr.pFillPayment.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_int]
+        self.elzabdr.pFillPayment.restype = ctypes.c_int
+
+        self.elzabdr.ReceiptBegin.restype = ctypes.c_int
+
+        self.elzabdr.PackageItem.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+        self.elzabdr.PackageItem.restype = ctypes.c_int
+
+        self.elzabdr.pReceiptItemEx.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                           ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+        self.elzabdr.pReceiptItemEx.restype = ctypes.c_int
+
+        self.elzabdr.ReceiptEnd.argtypes = [ctypes.c_int]
+        self.elzabdr.ReceiptEnd.restype = ctypes.c_int
+
+        self.elzabdr.CommunicationEnd.restype = ctypes.c_int
+
+        self.elzabdr.pErrMessage.argtypes = [ctypes.c_int, ctypes.c_char_p]
+        self.elzabdr.pErrMessage.restype = ctypes.c_int
+
+        self.elzabdr.pNonFiscalPrintoutLine.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+        self.elzabdr.pNonFiscalPrintoutLine.restype = ctypes.c_int
 
     def print_receipt(self, order):
         if self.local:
@@ -98,14 +98,17 @@ class Printer:
 
     def print_order_items(self, order, elzabdr):
         for item in order.items:
+            elzabdr.pNonFiscalPrintoutLine(self.EMPTY_LINE , b"", self.NO_NEW_LINE)
             elzabdr.pNonFiscalPrintoutLine(self.LINE_ITEM, item.name.encode('windows-1250'), self.NEW_LINE)
             elzabdr.pNonFiscalPrintoutLine(self.LINE_ITEM, str(item.amount/100).encode('windows-1250'), self.NEW_LINE)
+            for placing in item.na_miejscu_na_wynos:
+                elzabdr.pNonFiscalPrintoutLine(self.LINE_ITEM, placing.encode('windows-1250'), self.NEW_LINE)
 
     def print_order_details(self, order, elzabdr):
         message = "Numer kolejny: {}".format(str(order.order_id)[-3:])
+        elzabdr.pNonFiscalPrintoutLine(self.EMPTY_LINE , b"", self.NO_NEW_LINE)
         elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, message.encode('windows-1250'), self.NEW_LINE)
         elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, str(order.comments).encode('windows-1250'), self.NEW_LINE)
-        elzabdr.pNonFiscalPrintoutLine(self.ORDER_DETAILS, str(order.na_miejscu_na_wynos).encode('windows-1250'), self.NEW_LINE)
         elzabdr.pNonFiscalPrintoutLine(self.TELEFON_FIELD, b"Telefon", self.NEW_LINE)
         elzabdr.pNonFiscalPrintoutLine(self.PHONE_NUMBER, str(order.phone_number).encode('windows-1250'), self.NEW_LINE)
 
@@ -117,23 +120,3 @@ class Printer:
         for item in order.items:
             print(item.name, item.vat_rate, 0, item.amount, 2,item.measurement_unit, item.price)
         print('\n')
-
-
-class MockPrinter:
-    def __init__(self):
-        pass
-
-    def pNonFiscalPrintoutLine(self, arg1, arg2, arg3):
-        print(f"{arg1}\t{arg2.decode('windows-1250')}")
-
-    def CommunicationInit(self, port, speed, timeout):
-        return 0
-
-    def NonFiscalPrintoutBegin(self, param):
-        pass
-
-    def NonFiscalPrintoutEnd(self):
-        pass
-
-    def CommunicationEnd(self):
-        pass

@@ -18,12 +18,16 @@ import logging
 import yaml
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
-from receipt import Order, ReceiptItem, Printer, elzabdr
+from receipt import Printer
+from modules.receipt_item import Order, ReceiptItem
 from version import __version__
 
 from modules.order_data_transformer import OrderDataTransformer
 from modules.treeview_data_formatter import TreeViewDataFormatter
 from modules.receipt_data_formatter import ReceiptDataFormatter
+
+import ctypes
+elzabdr = ctypes.CDLL('./elzabdr.dll')
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -72,6 +76,7 @@ class OrderManager:
         self.use_local_printer = config['use_local_printer']
         self.printer = Printer(elzabdr, config['printer']['port'], config['printer']['speed'], config['printer'][
         'timeout'], self.use_local_printer)
+        self.printer.initilize_dll()
         self.proxies = None
         if config['use_proxy']:
             self.proxies = config['proxy']

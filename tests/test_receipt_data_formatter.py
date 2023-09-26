@@ -13,8 +13,8 @@ def test_create_receipt_order():
         "status": "processing",
         'date_created': f"{datetime.now():%Y-%m-%dT%H:%M:%S}", 
         'line_items': [
-            {'name': "item1", 'quantity': 5, 'total': "10.0", 'total_tax': "0.5", 'na_miejscu_na_wynos': "Yes"},
-            {'name': "item2", 'quantity': 2, 'total': "20.0", 'total_tax': "1.0", 'na_miejscu_na_wynos': "No"},
+            {'name': "item1", 'quantity': 1, 'total': "10.0", 'total_tax': "0.5", 'na_miejscu_na_wynos': "Yes"},
+            {'name': "item2", 'quantity': 1, 'total': "20.0", 'total_tax': "1.0", 'na_miejscu_na_wynos': "No"},
         ],
         'dodatki_do_pizzy': {
             'notatki': 'Test comment'
@@ -39,6 +39,11 @@ def test_create_receipt_order():
       "id": 33999,
       "key": "na_miejscu_na_wynos",
       "value": "Na wynos"
+    },
+    {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos",
+      "value": "Na miejscu"
     },
     {
       "id": 34000,
