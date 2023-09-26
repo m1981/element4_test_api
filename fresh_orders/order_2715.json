@@ -161,6 +161,26 @@
       "value": "Na wynos"
     },
     {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos_2",
+      "value": "Na wynos"
+    },
+        {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos_3",
+      "value": "Na wynos"
+    },
+    {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos_4",
+      "value": "Na wynos"
+    },
+    {
+      "id": 33999,
+      "key": "na_miejscu_na_wynos_5",
+      "value": "Na miejscu"
+    },    
+    {
       "id": 34000,
       "key": "notatki",
       "value": "Danie DNIA na miejscu, reszta na wynos"
